@@ -1,5 +1,6 @@
 examples
 src
+-inet.examples.ieee802_1d
 -inet.underTest.hip.application
 -inet.oversim
 -inet.applications.voiptool
