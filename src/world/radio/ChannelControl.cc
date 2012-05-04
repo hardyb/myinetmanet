@@ -20,6 +20,7 @@
 #include <cassert>
 
 #include "AirFrame_m.h"
+#include "Ieee802154Frame_m.h"
 
 #define coreEV (ev.isDisabled()||!coreDebug) ? ev : ev << "ChannelControl: "
 
@@ -295,9 +296,19 @@ void ChannelControl::sendToChannel(RadioRef srcRadio, AirFrame *airFrame)
     const RadioRefVector& neighbors = getNeighbors(srcRadio);
     int n = neighbors.size();
     int channel = airFrame->getChannelNumber();
+    // Andrew Hardy
+    //cModule* nic = srcRadio->radioModule->getParentModule();
+    //std::string srcAddressString = nic->getSubmodule("mac")->par("address");
+    ////////////////////
     for (int i=0; i<n; i++)
     {
         RadioRef r = neighbors[i];
+        // Andrew Hardy
+        cModule* nic = r->radioModule->getParentModule();
+        std::string nbrAddressString = nic->getSubmodule("mac")->par("address");
+        MACAddress nbrAddrObj(nbrAddressString.c_str());
+        nbrAddrObj.convert64();
+        ////////////////////
         if (!r->isActive)
         {
             coreEV << "skipping disabled radio interface \n";
@@ -309,7 +320,23 @@ void ChannelControl::sendToChannel(RadioRef srcRadio, AirFrame *airFrame)
             // account for propagation delay, based on distance in meters
             // Over 300m, dt=1us=10 bit times @ 10Mbps
             simtime_t delay = srcRadio->pos.distance(r->pos) / LIGHT_SPEED;
-            check_and_cast<cSimpleModule*>(srcRadio->radioModule)->sendDirect(airFrame->dup(), delay, airFrame->getDuration(), r->radioInGate);
+            Ieee802154Frame * macFrame = check_and_cast<Ieee802154Frame *>(airFrame->getEncapsulatedPacket());
+            AirFrame *dupAirFrame = airFrame->dup();
+            if (macFrame)
+            {
+                std::string dstAddr = macFrame->getDstAddr().str();
+                if ( macFrame->getDstAddr() != MACAddress::BROADCAST_ADDRESS64 )
+                //if ( macFrame->getDstAddr().str() != "" )
+                {
+                    if ( nbrAddrObj != macFrame->getDstAddr() )
+                    //if ( nbrAddressString != dstAddr )
+                    {
+                        dupAirFrame->displayOff();
+                        dupAirFrame->setName(0);
+                    }
+                }
+            }
+            check_and_cast<cSimpleModule*>(srcRadio->radioModule)->sendDirect(dupAirFrame, delay, airFrame->getDuration(), r->radioInGate);
         }
         else
             coreEV << "skipping radio listening on a different channel\n";
