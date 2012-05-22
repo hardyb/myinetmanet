@@ -5,6 +5,7 @@ src
 -inet.oversim
 -inet.applications.voiptool
 -inet.underTest.hip.base
+-inet.nodes.ethernet.Ieee8021d
 -inet.transport.tcp_lwip
 -inet.linklayer.ieee8021d
 -inet.transport.tcp_nsc
