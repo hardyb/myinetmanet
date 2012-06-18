@@ -92,6 +92,7 @@ class INET_API PassiveQueueBase : public cSimpleModule, public IPassiveQueue
      * Clear all queued packets and stored requests.
      */
     virtual void clear();
+    void dropAll();
 };
 
 #endif

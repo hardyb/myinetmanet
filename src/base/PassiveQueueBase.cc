@@ -105,6 +105,24 @@ void PassiveQueueBase::clear()
     packetRequested = 0;
 }
 
+
+void PassiveQueueBase::dropAll()
+{
+    cMessage *msg;
+
+    while (NULL != (msg = dequeue()))
+    {
+        numQueueDropped++;
+        emit(dropPkByQueueSignal, msg);
+        msgId2TimeMap.erase(msg->getId());
+        delete msg;
+    }
+
+    packetRequested = 0;
+}
+
+
+
 void PassiveQueueBase::finish()
 {
     msgId2TimeMap.clear();
