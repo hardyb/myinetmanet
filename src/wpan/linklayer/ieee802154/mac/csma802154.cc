@@ -31,6 +31,7 @@
 #include "Ieee802Ctrl_m.h"
 #include "Ieee802154Phy.h"
 #include "csma802154.h"
+#include "Radio80211aControlInfo_m.h"
 
 Define_Module(csma802154);
 /**
@@ -51,7 +52,8 @@ void csma802154::initialize(int stage)
     if (stage == 0)
     {
         //get my mac address
-        useIeee802Ctrl=true;
+        useIeee802Ctrl = par("useIeee802Ctrl");
+        //useIeee802Ctrl=true;
 
         const char *addressString = par("address");
         if (!strcmp(addressString, "auto"))
@@ -270,8 +272,14 @@ void csma802154::handleUpperMsg(cMessage *msg)
             dest = macModule->getMacAddr();
         }
         else
+        {
             dest=cInfo->getNetwAddr();
+        }
 
+        if (dest.isBroadcast())
+            dest = MACAddress::BROADCAST_ADDRESS64;
+        else if (!dest.getFlagEui64())
+            dest.convert64();
     }
     delete controlInfo;
     macPkt->setDstAddr(dest);
@@ -929,8 +937,11 @@ void csma802154::handleLowerMsg(cMessage *msg)
     MACAddress dest = macPkt->getDstAddr();
     //long ExpectedNr = 0;
     uint8_t ExpectedNr = 0;
-    if (msg->getControlInfo())
-    	delete msg->removeControlInfo();
+    // Andrew Hardy
+    // Remove and delete before decapsulation and sending up
+    //if (msg->getControlInfo())
+    //	delete msg->removeControlInfo();
+    ////////////////////////////////////////
 
     if (macPkt->getKind()!=PACKETOK)
     {
@@ -1114,7 +1125,19 @@ cPacket *csma802154::decapsMsg(Ieee802154Frame * macPkt)
     else
     {
         Ieee802154NetworkCtrlInfo * cinfo = new Ieee802154NetworkCtrlInfo();
-        cinfo->setNetwAddr(macPkt->getSrcAddr().getInt());
+        MACAddress destination = macPkt->getSrcAddr();
+        if (destination.isBroadcast())
+            destination = MACAddress::BROADCAST_ADDRESS;
+        else
+            destination.convert48();
+        cinfo->setNetwAddr(destination.getInt());
+        // Andrew Hardy
+        Radio80211aControlInfo* phyCinfo = check_and_cast<Radio80211aControlInfo*>(macPkt->removeControlInfo());
+        cinfo->setSnr(phyCinfo->getSnr());
+        cinfo->setPowerRec(phyCinfo->getRecPow());
+        msg->setControlInfo(cinfo);
+        delete phyCinfo;
+        //////////////////////////////////////////////////////////
     }
     return msg;
 }

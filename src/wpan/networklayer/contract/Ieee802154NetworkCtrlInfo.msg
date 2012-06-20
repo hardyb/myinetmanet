@@ -12,4 +12,8 @@ message Ieee802154NetworkCtrlInfo
     bool toParent;
     string destName;
     int64_t  netwAddr=-1; 
+    unsigned char lqi;
+    unsigned char rssi;
+    double snr;
+    double powerRec;
 }
