@@ -1135,6 +1135,16 @@ cPacket *csma802154::decapsMsg(Ieee802154Frame * macPkt)
         Radio80211aControlInfo* phyCinfo = check_and_cast<Radio80211aControlInfo*>(macPkt->removeControlInfo());
         cinfo->setSnr(phyCinfo->getSnr());
         cinfo->setPowerRec(phyCinfo->getRecPow());
+
+        double frameDbm = FWMath::mW2dBm(phyCinfo->getRecPow());
+        cModule* phy = this->getParentModule()->getSubmodule("phy");
+        double sensitivityDbm = phy ? phy->par("sensitivity").doubleValue() : 0;
+        double RSSI = sensitivityDbm ? ( 1 - (frameDbm / sensitivityDbm)) * 100 : 0;
+        unsigned int RSSI_int = RSSI;
+        cinfo->setRssi(RSSI_int);
+
+
+
         msg->setControlInfo(cinfo);
         delete phyCinfo;
         //////////////////////////////////////////////////////////
