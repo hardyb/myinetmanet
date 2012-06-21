@@ -13,7 +13,7 @@ message Ieee802154NetworkCtrlInfo
     string destName;
     int64_t  netwAddr=-1; 
     unsigned char lqi;
-    unsigned char rssi;
+    unsigned int rssi;
     double snr;
     double powerRec;
 }

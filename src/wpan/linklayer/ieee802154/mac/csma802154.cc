@@ -1136,6 +1136,7 @@ cPacket *csma802154::decapsMsg(Ieee802154Frame * macPkt)
         cinfo->setSnr(phyCinfo->getSnr());
         cinfo->setPowerRec(phyCinfo->getRecPow());
 
+        // Set RSSI
         double frameDbm = FWMath::mW2dBm(phyCinfo->getRecPow());
         cModule* phy = this->getParentModule()->getSubmodule("phy");
         double sensitivityDbm = phy ? phy->par("sensitivity").doubleValue() : 0;
@@ -1143,7 +1144,9 @@ cPacket *csma802154::decapsMsg(Ieee802154Frame * macPkt)
         unsigned int RSSI_int = RSSI;
         cinfo->setRssi(RSSI_int);
 
-
+        // Set LQI
+        unsigned char lqi = 0xFF * RSSI_int/100;
+        cinfo->setLqi(lqi);
 
         msg->setControlInfo(cinfo);
         delete phyCinfo;
