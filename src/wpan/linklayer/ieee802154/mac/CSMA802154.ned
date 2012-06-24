@@ -42,7 +42,8 @@ simple CSMA802154
         // simple interframe space. Time to wait between receiving a frame and acknowledging it.
         // Should be bigger than the maximum time for switching between Tx and Rx at the receiver.      
         double sifs @unit(s) = default(0.000192 s); // 12 symbols
-
+        // for rssi we measure received signal relative to sensitivity in the range below
+        double rssiRangeDbm @unit(dbm) = default(40 dbm); 
 
         double macMaxCSMABackoffs = default(5);
         // maximum number of frame retransmission

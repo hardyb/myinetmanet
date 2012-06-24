@@ -1140,7 +1140,11 @@ cPacket *csma802154::decapsMsg(Ieee802154Frame * macPkt)
         double frameDbm = FWMath::mW2dBm(phyCinfo->getRecPow());
         cModule* phy = this->getParentModule()->getSubmodule("phy");
         double sensitivityDbm = phy ? phy->par("sensitivity").doubleValue() : 0;
-        double RSSI = sensitivityDbm ? ( 1 - (frameDbm / sensitivityDbm)) * 100 : 0;
+        double relativeRecvDbm = frameDbm - sensitivityDbm;
+        double rssiRangeDbm = par("rssiRangeDbm").doubleValue();
+        double RSSI = relativeRecvDbm / rssiRangeDbm * 100;
+        RSSI = (RSSI <= 100) ? RSSI : 100;
+        //double RSSI = sensitivityDbm ? ( 1 - (frameDbm / sensitivityDbm)) * 100 : 0;
         unsigned int RSSI_int = RSSI;
         cinfo->setRssi(RSSI_int);
 
