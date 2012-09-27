@@ -35,6 +35,8 @@
 
 Define_Module(IPv4);
 
+extern void (*recordDataStatsCallBack) (double stat);
+
 #define NEWFRAGMENT
 
 void IPv4::initialize()
@@ -508,6 +510,8 @@ void IPv4::routeUnicastPacket(IPv4Datagram *datagram, InterfaceEntry *destIE, IP
         EV << "output interface is " << destIE->getName() << ", next-hop address: " << nextHopAddr << "\n";
         numForwarded++;
         fragmentAndSend(datagram, destIE, nextHopAddr);
+        // HERE
+        recordDataStatsCallBack(1.0);
     }
 }
 
