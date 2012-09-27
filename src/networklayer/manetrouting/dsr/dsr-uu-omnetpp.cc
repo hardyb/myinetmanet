@@ -27,6 +27,14 @@
 #include "IPv4Address.h"
 #include "Ieee802Ctrl_m.h"
 #include "Ieee80211Frame_m.h"
+#ifdef WITH_80215
+#include "Ieee802154Frame_m.h"
+#endif
+
+#ifdef WITH_BMAC
+#include "bmacpkt_m.h"
+#endif
+
 #include "ICMPMessage_m.h"
 
 unsigned int DSRUU::confvals[CONFVAL_MAX];
@@ -171,7 +179,9 @@ void DSRUU::omnet_deliver(struct dsr_pkt *dp)
     dgram->setIdentification(dp->nh.iph->id); // Identification
     dgram->setMoreFragments(dp->nh.iph->tos & 0x2000);
     dgram->setDontFragment(dp->nh.iph->frag_off & 0x4000);
+#ifdef NEWFRAGMENT
     dgram->setTotalPayloadLength(dp->totalPayloadLength);
+#endif
     dgram->setTimeToLive(dp->nh.iph->ttl); // TTL
     dgram->setTransportProtocol(dp->encapsulate_protocol); // Transport protocol
 
@@ -593,15 +603,52 @@ void DSRUU::receiveChangeNotification(int category, const cObject *details)
     if (category == NF_LINK_BREAK)
     {
         Enter_Method("Dsr Link Break");
-        Ieee80211DataFrame *frame = check_and_cast<Ieee80211DataFrame *>(details);
-        if (dynamic_cast<IPv4Datagram *>(frame->getEncapsulatedPacket()))
-            dgram = check_and_cast<IPv4Datagram *>(frame->getEncapsulatedPacket());
-        else
-            return;
-
-        if (!get_confval(UseNetworkLayerAck))
+        Ieee80211DataFrame *frame = dynamic_cast<Ieee80211DataFrame *>(const_cast<cObject *>(details));
+        if (frame)
         {
-            packetFailed(dgram);
+            if (dynamic_cast<IPv4Datagram *>(frame->getEncapsulatedPacket()))
+                dgram = check_and_cast<IPv4Datagram *>(frame->getEncapsulatedPacket());
+            else
+                return;
+
+            if (!get_confval(UseNetworkLayerAck))
+            {
+                packetFailed(dgram);
+            }
+        }
+        else
+        {
+#ifdef WITH_80215
+            Ieee802154Frame *frame15 = dynamic_cast<Ieee802154Frame *>(const_cast<cObject *>(details));
+            if (frame15)
+            {
+                if (dynamic_cast<IPv4Datagram *>(frame15->getEncapsulatedPacket()))
+                    dgram = check_and_cast<IPv4Datagram *>(frame15->getEncapsulatedPacket());
+                else
+                    return;
+
+                if (!get_confval(UseNetworkLayerAck))
+                {
+                    packetFailed(dgram);
+                }
+            }
+#endif
+
+#ifdef WITH_BMAC
+            BmacPkt *frameB = dynamic_cast<BmacPkt *>(const_cast<cObject *>(details));
+            if (frameB)
+            {
+                if (dynamic_cast<IPv4Datagram *>(frameB->getEncapsulatedPacket()))
+                    dgram = check_and_cast<IPv4Datagram *>(frameB->getEncapsulatedPacket());
+                else
+                    return;
+
+                if (!get_confval(UseNetworkLayerAck))
+                {
+                    packetFailed(dgram);
+                }
+            }
+#endif
         }
     }
     else if (category == NF_LINK_PROMISCUOUS)
@@ -618,16 +665,16 @@ void DSRUU::receiveChangeNotification(int category, const cObject *details)
 
                     DSRPkt *paux = check_and_cast <DSRPkt *> (frame->getEncapsulatedPacket());
 
-                    DSRPkt *p = check_and_cast <DSRPkt *> (paux->dup());
-                    take(p);
+                   // DSRPkt *p = check_and_cast <DSRPkt *> (paux->dup());
+                   // take(p);
                     EV << "####################################################\n";
-                    EV << "Dsr protocol received promiscuous packet from " << p->getSrcAddress() << "\n";
+                    EV << "Dsr protocol received promiscuous packet from " << paux->getSrcAddress() << "\n";
                     EV << "#####################################################\n";
                     Ieee802Ctrl *ctrl = new Ieee802Ctrl();
                     ctrl->setSrc(frame->getTransmitterAddress());
                     ctrl->setDest(frame->getReceiverAddress());
-                    p->setControlInfo(ctrl);
-                    tap(p);
+                  //  p->setControlInfo(ctrl);
+                    tap(paux,ctrl);
                 }
             }
         }
@@ -715,15 +762,15 @@ void DSRUU::linkFailed(IPv4Address ipAdd)
 }
 
 
-void DSRUU::tap(DSRPkt *p)
+void DSRUU::tap(DSRPkt *p, cObject *ctrl)
 {
     struct dsr_pkt *dp;
-    struct in_addr next_hop, prev_hop;
-    next_hop.s_addr = p->nextAddress().getInt();
-    prev_hop.s_addr = p->prevAddress().getInt();
+    //struct in_addr next_hop, prev_hop;
+    //next_hop.s_addr = p->nextAddress().getInt();
+    //prev_hop.s_addr = p->prevAddress().getInt();
     int transportProtocol = p->getTransportProtocol();
     /* Cast the packet so that we can touch it */
-    dp = dsr_pkt_alloc(p);
+    dp = dsr_pkt_alloc2(p, ctrl);
     dp->flags |= PKT_PROMISC_RECV;
 
     /* TODO: See if this node is the next hop. In that case do nothing */
@@ -986,7 +1033,7 @@ double DSRUU::PathCost(struct dsr_pkt *dp)
         cost = getCost(dp->costVector[dp->costVectorSize-1].address);
     else
     {
-        cost = getCost(dp->src.s_addr);
+        cost = getCost(IPv4Address(dp->src.s_addr));
     }
 
     if (cost<0)
@@ -1043,15 +1090,19 @@ bool DSRUU::proccesICMP(cMessage *msg)
         delete msg;
         return true;
     }
-    if (pk->getControlInfo())
-        delete pk->removeControlInfo();
+
     IPv4Datagram *newdgram = new IPv4Datagram();
     bogusPacket->setTransportProtocol(bogusPacket->getEncapProtocol());
     IPv4Address dst(this->my_addr().s_addr);
     newdgram->setDestAddress(dst);
-    newdgram->encapsulate(bogusPacket);
+    ICMPMessage * icmpMsg = new ICMPMessage();
+    icmpMsg->setType(pk->getType());
+    icmpMsg->setCode(pk->getCode());
+    icmpMsg->encapsulate(bogusPacket->dup());
+    newdgram->encapsulate(icmpMsg);
     newdgram->setTransportProtocol(IP_PROT_ICMP);
     send(newdgram,"to_ip");
+    delete msg;
     return true;
  }
 

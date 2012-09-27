@@ -141,11 +141,11 @@ description = "Aodv Simple test"
 #######################################################
 
 # nic settings
+**.wlan*.bitrate = 54Mbps
 **.wlan*.mac.EDCA = false
 **.wlan*.mgmt.frameCapacity = 10
 **.wlan*.mac.maxQueueSize = 14
 **.wlan*.mac.rtsThresholdBytes = 3000B
-**.wlan*.mac.bitrate = 54Mbps
 **.wlan*.mac.basicBitrate = 6Mbps  # 24Mbps
 **.wlan*.mac.retryLimit = 7
 **.wlan*.mac.cwMinData = 31
@@ -155,9 +155,8 @@ description = "Aodv Simple test"
 *.channelControl.pMax = 2.0mW
 
 **.wlan*.radio.transmitterPower=2.0mW
-**.wlan*.radio.bitrate=54Mbps
 **.wlan*.radio.sensitivity=-90dBm
-**.wlan*.radio.berTableFile="per_table_80211g_Trivellato.dat"
+**.wlan*.radio.berTableFile="../../files/per_table_80211g_Trivellato.dat"
 
 
 **.broadCastDelay=uniform(0s,0.005s)
@@ -186,7 +185,7 @@ cat("\n  MANETROUTING UDP TEST RESULT:\n")
 
 cat("\n    CHECKS SENT PACKETS:\n")
 
-x <- dataset$scalars[dataset$scalars$name == "sentPkBytes:count",]
+x <- dataset$scalars[dataset$scalars$name == "sentPk:count",]
 xx <- x[grep("\\.senderhost\\.udpApp\\[0\\]",x$module),]
 
 if(length(xx$value) != linecount)
@@ -207,7 +206,7 @@ if(length(xx$value) != linecount)
 
 cat("\n    CHECKS RECEIVED PACKETS:\n")
 
-x <- dataset$scalars[dataset$scalars$name == "rcvdPkBytes:count",]
+x <- dataset$scalars[dataset$scalars$name == "rcvdPk:count",]
 xx <- x[grep("\\.rcvrhost\\.udpApp\\[0\\]",x$module),]
 
 if(length(xx$value) != linecount)

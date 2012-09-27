@@ -1,5 +1,6 @@
 /***************************************************************************
  *   Copyright (C) 2008 by Alfonso Ariza                                   *
+ *   Copyright (C) 2012 by Alfonso Ariza                                   *
  *   aarizaq@uma.es                                                        *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -22,7 +23,7 @@
 
 #include "ManetRoutingBase.h"
 #include "UDPPacket.h"
-#include "IPv4Datagram_m.h"
+#include "IPv4Datagram.h"
 #include "IPv4ControlInfo.h"
 #include "IPv4InterfaceData.h"
 #include "IPv6ControlInfo.h"
@@ -35,6 +36,12 @@
 #include "ICMPAccess.h"
 #include "IMobility.h"
 #include "Ieee80211MgmtAP.h"
+#include "GlobalWirelessLinkInspector.h"
+#ifdef WITH_80215
+#include "Ieee802154Frame_m.h"
+#endif
+
+
 #define IP_DEF_TTL 32
 
 //#define UDP_HDR_LEN 8
@@ -122,6 +129,9 @@ bool ManetTimer::isScheduled()
 
 ManetRoutingBase::ManetRoutingBase()
 {
+#ifdef WITH_80211MESH
+    locator = NULL;
+#endif
     isRegistered = false;
     regPosition = false;
     mac_layer_ = false;
@@ -133,7 +143,6 @@ ManetRoutingBase::ManetRoutingBase()
     staticNode = false;
     colaborativeProtocol = NULL;
     arp = NULL;
-    locator = NULL;
     isGateway = false;
     proxyAddress.clear();
     addressGroupVector.clear();
@@ -269,8 +278,8 @@ void ManetRoutingBase::registerRoutingModule()
     if (inet_rt)
         routerId = inet_rt->getRouterId().getInt();
 
-    if (interfaceVector->size()==0 || interfaceVector->size() > (unsigned int)maxInterfaces)
-        opp_error("Manet routing protocol has found %i wlan interfaces", num_80211);
+    if (interfaceVector->size()==0)
+        opp_error("Manet routing protocol has found no interfaces that can be used for routing.");
     if (mac_layer_)
         hostAddress = interfaceVector->front().interfacePtr->getMacAddress().getInt();
     else
@@ -320,6 +329,7 @@ void ManetRoutingBase::registerRoutingModule()
     nb->subscribe(this,NF_L2_AP_DISASSOCIATED);
     nb->subscribe(this,NF_L2_AP_ASSOCIATED);
 
+#ifdef WITH_80211MESH
     locator = LocatorModuleAccess().getIfExists();
     if (locator)
     {
@@ -331,6 +341,7 @@ void ManetRoutingBase::registerRoutingModule()
         nb->subscribe(this,NF_LOCATOR_ASSOC);
         nb->subscribe(this,NF_LOCATOR_DISASSOC);
     }
+#endif
 
     if (par("PublicRoutingTables").boolValue())
     {
@@ -358,6 +369,8 @@ void ManetRoutingBase::registerRoutingModule()
             it->second.push_back(data);
         }
     }
+
+    GlobalWirelessLinkInspector::initRoutingTables(this,getAddress(),isProactive());
 
  //   WATCH_MAP(*routesVector);
 }
@@ -800,34 +813,8 @@ void ManetRoutingBase::omnet_chg_rte(const Uint128 &dst, const Uint128 &gtwy, co
 
     /* Add route to kernel routing table ... */
     IPv4Address desAddress((uint32_t)dst);
-    if (!createInternalStore && routesVector)
-    {
-        delete routesVector;
-        routesVector = NULL;
-    }
-    else if (createInternalStore && routesVector)
-    {
-        RouteMap::iterator it = routesVector->find(dst);
-        if (it != routesVector->end())
-            routesVector->erase(it);
-        if (!del_entry)
-        {
-            /*
-            Uint128 dest=dst;
-            Uint128 next=gtwy;
-            if (mac_layer_)
-            {
-                dest.setAddresType(Uint128::MAC);
-                next.setAddresType(Uint128::MAC);
-            }
-            else
-            {
-                dest.setAddresType(Uint128::IPV4);
-                next.setAddresType(Uint128::IPV4);
-            }*/
-            routesVector->insert(std::make_pair<Uint128,Uint128>(dst, gtwy));
-        }
-    }
+    setRouteInternalStorege(dst, gtwy, del_entry);
+    GlobalWirelessLinkInspector::setRoute(this,getAddress(),dst,gtwy,del_entry);
 
     if (mac_layer_)
         return;
@@ -852,6 +839,7 @@ void ManetRoutingBase::omnet_chg_rte(const Uint128 &dst, const Uint128 &gtwy, co
         }
     }
 
+#ifdef WITH_80211MESH
     if (locator && locator->isApIp(desAddress) && del_entry)
     {
         std::vector<IPv4Address> list;
@@ -871,6 +859,7 @@ void ManetRoutingBase::omnet_chg_rte(const Uint128 &dst, const Uint128 &gtwy, co
             }
         }
     }
+#endif
     if (del_entry)
         return;
 
@@ -882,7 +871,6 @@ void ManetRoutingBase::omnet_chg_rte(const Uint128 &dst, const Uint128 &gtwy, co
         netmask = IPv4Address::ALLONES_ADDRESS;
 
     InterfaceEntry *ie = getInterfaceWlanByAddress(iface);
-    IPv4Route::RouteType routeType = gateway.isUnspecified() ? IPv4Route::DIRECT : IPv4Route::REMOTE;
     IPv4Route::RouteSource routeSource = usetManetLabelRouting ? IPv4Route::MANET : IPv4Route::MANET2;
 
     if (found)
@@ -892,7 +880,6 @@ void ManetRoutingBase::omnet_chg_rte(const Uint128 &dst, const Uint128 &gtwy, co
                 && oldentry->getGateway() == gateway
                 && oldentry->getMetric() == hops
                 && oldentry->getInterface() == ie
-                && oldentry->getType() == routeType
                 && oldentry->getSource() == routeSource)
             return;
         inet_rt->deleteRoute(oldentry);
@@ -912,12 +899,11 @@ void ManetRoutingBase::omnet_chg_rte(const Uint128 &dst, const Uint128 &gtwy, co
 
     entry->setInterface(ie);
 
-    /// Route type: Direct or Remote
-    entry->setType(routeType);
     /// Source of route, MANUAL by reading a file,
     /// routing protocol name otherwise
     entry->setSource(routeSource);
     inet_rt->addRoute(entry);
+#ifdef WITH_80211MESH
     if (locator && locator->isApIp(desAddress))
     {
         std::vector<IPv4Address> list;
@@ -945,14 +931,13 @@ void ManetRoutingBase::omnet_chg_rte(const Uint128 &dst, const Uint128 &gtwy, co
 
             entry->setInterface(ie);
 
-            /// Route type: Direct or Remote
-            entry->setType(routeType);
             /// Source of route, MANUAL by reading a file,
             /// routing protocol name otherwise
             entry->setSource(routeSource);
             inet_rt->addRoute(entry);
         }
     }
+#endif
 }
 
 // This methods use the nic index to identify the output nic.
@@ -970,21 +955,8 @@ void ManetRoutingBase::omnet_chg_rte(const Uint128 &dst, const Uint128 &gtwy, co
 
     /* Add route to kernel routing table ... */
     IPv4Address desAddress((uint32_t)dst);
-    if (!createInternalStore && routesVector)
-    {
-         delete routesVector;
-         routesVector = NULL;
-    }
-    else if (createInternalStore && routesVector)
-    {
-         RouteMap::iterator it = routesVector->find(dst);
-         if (it != routesVector->end())
-             routesVector->erase(it);
-         if (!del_entry)
-         {
-             routesVector->insert(std::make_pair<Uint128,Uint128>(dst, gtwy));
-         }
-    }
+    setRouteInternalStorege(dst, gtwy, del_entry);
+    GlobalWirelessLinkInspector::setRoute(this,getAddress(),dst,gtwy,del_entry);
     if (mac_layer_)
         return;
     bool found = false;
@@ -1007,6 +979,7 @@ void ManetRoutingBase::omnet_chg_rte(const Uint128 &dst, const Uint128 &gtwy, co
         }
     }
 
+#ifdef WITH_80211MESH
     if (locator && locator->isApIp(desAddress) && del_entry)
     {
         std::vector<IPv4Address> list;
@@ -1026,7 +999,7 @@ void ManetRoutingBase::omnet_chg_rte(const Uint128 &dst, const Uint128 &gtwy, co
             }
         }
     }
-
+#endif
     if (del_entry)
         return;
 
@@ -1036,7 +1009,6 @@ void ManetRoutingBase::omnet_chg_rte(const Uint128 &dst, const Uint128 &gtwy, co
         netmask = IPv4Address::ALLONES_ADDRESS;
 
     InterfaceEntry *ie = getInterfaceEntry(index);
-    IPv4Route::RouteType routeType = gateway.isUnspecified() ? IPv4Route::DIRECT : IPv4Route::REMOTE;
     IPv4Route::RouteSource routeSource = usetManetLabelRouting ? IPv4Route::MANET : IPv4Route::MANET2;
 
     if (found)
@@ -1046,7 +1018,6 @@ void ManetRoutingBase::omnet_chg_rte(const Uint128 &dst, const Uint128 &gtwy, co
                 && oldentry->getGateway() == gateway
                 && oldentry->getMetric() == hops
                 && oldentry->getInterface() == ie
-                && oldentry->getType() == routeType
                 && oldentry->getSource() == routeSource)
             return;
         inet_rt->deleteRoute(oldentry);
@@ -1066,11 +1037,6 @@ void ManetRoutingBase::omnet_chg_rte(const Uint128 &dst, const Uint128 &gtwy, co
 
     entry->setInterface(getInterfaceEntry(index));
 
-    /// Route type: Direct or Remote
-    if (entry->getGateway().isUnspecified())
-        entry->setType(IPv4Route::DIRECT);
-    else
-        entry->setType(IPv4Route::REMOTE);
     /// Source of route, MANUAL by reading a file,
     /// routing protocol name otherwise
 
@@ -1081,6 +1047,7 @@ void ManetRoutingBase::omnet_chg_rte(const Uint128 &dst, const Uint128 &gtwy, co
 
         inet_rt->addRoute(entry);
 
+#ifdef WITH_80211MESH
     if (locator && locator->isApIp(desAddress))
     {
         std::vector<IPv4Address> list;
@@ -1108,14 +1075,13 @@ void ManetRoutingBase::omnet_chg_rte(const Uint128 &dst, const Uint128 &gtwy, co
 
             e->setInterface(ie);
 
-            /// Route type: Direct or Remote
-            e->setType(entry->getType());
             /// Source of route, MANUAL by reading a file,
             /// routing protocol name otherwise
             e->setSource(entry->getSource());
             inet_rt->addRoute(e);
         }
     }
+#endif
 }
 
 
@@ -1174,31 +1140,50 @@ void ManetRoutingBase::receiveChangeNotification(int category, const cObject *de
         opp_error("Manet routing protocol is not register");
     if (category == NF_LINK_BREAK)
     {
-        if (details==NULL)
+        if (details == NULL)
             return;
-        Ieee80211DataFrame *frame = dynamic_cast<Ieee80211DataFrame *>(const_cast<cObject*>(details));
-        if (frame)
+        if (dynamic_cast<Ieee80211DataOrMgmtFrame *>(const_cast<cObject*>(details)))
         {
+            Ieee80211DataFrame *frame = dynamic_cast<Ieee80211DataFrame *>(const_cast<cObject*>(details));
+            if (frame)
+            {
+                cPacket * pktAux = frame->getEncapsulatedPacket();
+                if (!mac_layer_ && pktAux != NULL)
+                {
+                    cPacket *pkt = pktAux->dup();
+                    ControlInfoBreakLink *add = new ControlInfoBreakLink;
+                    add->setDest(frame->getReceiverAddress());
+                    pkt->setControlInfo(add);
+                    processLinkBreak(pkt);
+                    delete pkt;
+                }
+                else
+                    processLinkBreak(details);
+            }
+            else
+            {
+                Ieee80211ManagementFrame *frame =
+                        dynamic_cast<Ieee80211ManagementFrame *>(const_cast<cObject*>(details));
+                if (frame)
+                    processLinkBreakManagement(details);
+            }
+        }
+#ifdef WITH_80215
+        else if (dynamic_cast<Ieee802154Frame *>(const_cast<cObject*>(details)))
+        {
+            Ieee802154Frame *frame = dynamic_cast<Ieee802154Frame *>(const_cast<cObject*>(details));
             cPacket * pktAux = frame->getEncapsulatedPacket();
             if (!mac_layer_ && pktAux != NULL)
             {
                 cPacket *pkt = pktAux->dup();
                 ControlInfoBreakLink *add = new ControlInfoBreakLink;
-                add->setDest(frame->getReceiverAddress());
+                add->setDest(frame->getDstAddr());
                 pkt->setControlInfo(add);
                 processLinkBreak(pkt);
                 delete pkt;
             }
-            else
-                processLinkBreak(details);
         }
-        else
-        {
-            Ieee80211ManagementFrame *frame = dynamic_cast<Ieee80211ManagementFrame *>(const_cast<cObject*>(details));
-            if (frame)
-                processLinkBreakManagement(details);
-        }
-
+#endif
     }
     else if (category == NF_LINK_PROMISCUOUS)
     {
@@ -1236,10 +1221,12 @@ void ManetRoutingBase::receiveChangeNotification(int category, const cObject *de
             }
         }
     }
+#ifdef WITH_80211MESH
     else if(category == NF_LOCATOR_ASSOC)
         processLocatorAssoc(details);
     else if(category == NF_LOCATOR_DISASSOC)
         processLocatorDisAssoc(details);
+#endif
 }
 
 void ManetRoutingBase::receiveSignal(cComponent *source, simsignal_t signalID, cObject *obj)
@@ -1521,23 +1508,8 @@ bool ManetRoutingBase::setRoute(const Uint128 & destination, const Uint128 &next
     IPv4Address desAddress((uint32_t)destination);
     bool del_entry = (nextHop == (Uint128)0);
 
-    if (!createInternalStore && routesVector)
-    {
-         delete routesVector;
-         routesVector = NULL;
-    }
-    else if (createInternalStore && routesVector)
-    {
-         //FIXME netmask not stored in internal routesVector, only stored in inet routing table
-         // Is the netmask always ALLONES? If yes, do remove mask parameter...
-         RouteMap::iterator it = routesVector->find(destination);
-         if (it != routesVector->end())
-             routesVector->erase(it);
-         if (!del_entry)
-         {
-             routesVector->insert(std::make_pair<Uint128,Uint128>(destination, nextHop));
-         }
-    }
+    setRouteInternalStorege(destination, nextHop, del_entry);
+    GlobalWirelessLinkInspector::setRoute(this,getAddress(),destination,nextHop,del_entry);
 
     if (mac_layer_)
         return true;
@@ -1568,6 +1540,7 @@ bool ManetRoutingBase::setRoute(const Uint128 & destination, const Uint128 &next
         }
     }
 
+#ifdef WITH_80211MESH
     if (locator && locator->isApIp(desAddress) && del_entry)
     {
         std::vector<IPv4Address> list;
@@ -1587,7 +1560,7 @@ bool ManetRoutingBase::setRoute(const Uint128 & destination, const Uint128 &next
             }
         }
     }
-
+#endif
     if (del_entry)
         return true;
 
@@ -1596,7 +1569,6 @@ bool ManetRoutingBase::setRoute(const Uint128 & destination, const Uint128 &next
     if (mask==(Uint128)0)
         netmask = IPv4Address::ALLONES_ADDRESS;
     InterfaceEntry *ie = getInterfaceEntry(ifaceIndex);
-    IPv4Route::RouteType routeType = gateway.isUnspecified() ? IPv4Route::DIRECT : IPv4Route::REMOTE;
 
     if (found)
     {
@@ -1605,7 +1577,6 @@ bool ManetRoutingBase::setRoute(const Uint128 & destination, const Uint128 &next
                 && oldentry->getGateway() == gateway
                 && oldentry->getMetric() == hops
                 && oldentry->getInterface() == ie
-                && oldentry->getType() == routeType
                 && oldentry->getSource() == IPv4Route::MANUAL)
             return true;
         inet_rt->deleteRoute(oldentry);
@@ -1625,13 +1596,14 @@ bool ManetRoutingBase::setRoute(const Uint128 & destination, const Uint128 &next
 
     entry->setInterface(ie);
 
-    entry->setType(routeType);
     /// Source of route, MANUAL by reading a file,
     /// routing protocol name otherwise
-    entry->setSource(IPv4Route::MANUAL);
+    IPv4Route::RouteSource routeSource = usetManetLabelRouting ? IPv4Route::MANET : IPv4Route::MANET2;
+    entry->setSource(routeSource);
 
     inet_rt->addRoute(entry);
 
+#ifdef WITH_80211MESH
     if (locator && locator->isApIp(desAddress))
     {
         std::vector<IPv4Address> list;
@@ -1659,14 +1631,13 @@ bool ManetRoutingBase::setRoute(const Uint128 & destination, const Uint128 &next
 
             e->setInterface(ie);
 
-            /// Route type: Direct or Remote
-            e->setType(entry->getType());
             /// Source of route, MANUAL by reading a file,
             /// routing protocol name otherwise
             e->setSource(entry->getSource());
             inet_rt->addRoute(e);
         }
     }
+#endif
     return true;
 
 }
@@ -1900,6 +1871,7 @@ bool ManetRoutingBase::addressIsForUs(const Uint128 &addr) const
 
 bool ManetRoutingBase::getAp(const Uint128 &destination, Uint128& accesPointAddr) const
 {
+#ifdef WITH_80211MESH
     if (locator == NULL)
         return false;
     if (isInMacLayer())
@@ -1917,44 +1889,41 @@ bool ManetRoutingBase::getAp(const Uint128 &destination, Uint128& accesPointAddr
         accesPointAddr = ipAddr.getInt();
     }
     return true;
+#else
+    return false;
+#endif
 }
 
 void ManetRoutingBase::getApList(const MACAddress & dest,std::vector<MACAddress>& list)
 {
     list.clear();
-    if (locator == NULL)
-    {
-        list.push_back(dest);
-        return;
-    }
-    else
+#ifdef WITH_80211MESH
+    if (locator)
     {
         MACAddress ap = locator->getLocatorMacToMac(dest);
         if (!ap.isUnspecified())
             locator->getApList(ap,list);
         else
             locator->getApList(dest,list);
-        list.push_back(dest);
     }
+#endif
+    list.push_back(dest);
 }
 
 void ManetRoutingBase::getApListIp(const IPv4Address &dest,std::vector<IPv4Address>& list)
 {
     list.clear();
-    if (locator == NULL)
-    {
-        list.push_back(dest);
-        return;
-    }
-    else
+#ifdef WITH_80211MESH
+    if (locator)
     {
         IPv4Address ap = locator->getLocatorIpToIp(dest);
         if (!ap.isUnspecified())
             locator->getApListIp(ap,list);
         else
             locator->getApListIp(dest,list);
-        list.push_back(dest);
     }
+#endif
+    list.push_back(dest);
 }
 
 void ManetRoutingBase::getListRelatedAp(const Uint128 & add, std::vector<Uint128>& list)
@@ -1972,7 +1941,7 @@ void ManetRoutingBase::getListRelatedAp(const Uint128 & add, std::vector<Uint128
     else
     {
         std::vector<IPv4Address> listAux;
-        getApListIp(add.getLo(),listAux);
+        getApListIp(IPv4Address(add.getLo()),listAux);
         list.clear();
         for (unsigned int i = 0; i < listAux.size(); i++)
         {
@@ -1983,12 +1952,39 @@ void ManetRoutingBase::getListRelatedAp(const Uint128 & add, std::vector<Uint128
 
 bool ManetRoutingBase::isAp() const
 {
+#ifdef WITH_80211MESH
     if (!locator)
         return false;
     if (mac_layer_)
         return locator->isThisAp();
     else
         return locator->isThisApIp();
+#else
+    return false;
+#endif
+}
+
+
+void ManetRoutingBase::setRouteInternalStorege(const Uint128 &dest, const Uint128 &next, const bool &erase)
+{
+    if (!createInternalStore && routesVector)
+     {
+         delete routesVector;
+         routesVector = NULL;
+     }
+     else if (createInternalStore && routesVector)
+     {
+         RouteMap::iterator it = routesVector->find(dest);
+         if (it != routesVector->end())
+         {
+             if (erase)
+                 routesVector->erase(it);
+             else
+                 it->second = next;
+         }
+         else
+             routesVector->insert(std::make_pair<Uint128,Uint128>(dest, next));
+     }
 }
 
 bool ManetRoutingBase::getRouteFromGlobal(const Uint128 &src, const Uint128 &dest, std::vector<Uint128> &route)
@@ -2057,5 +2053,19 @@ bool ManetRoutingBase::getRouteFromGlobal(const Uint128 &src, const Uint128 &des
                 next = it2->second;
             }
         }
+    }
+}
+
+
+// Auxiliary function that return a string with the address
+std::string ManetRoutingBase::convertAddressToString(const Uint128& add)
+{
+    if (mac_layer_)
+    {
+        return MACAddress(add.getLo()).str();
+    }
+    else
+    {
+        return IPv4Address(add.getLo()).str();
     }
 }

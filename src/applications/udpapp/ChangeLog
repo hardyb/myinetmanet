@@ -1,3 +1,20 @@
+2012-08-07  ------ inet-2.0.0 released ------
+
+2012-06-25  ------ inet-1.99.5 released ------
+
+2012-06-15  Zoltan Bojthe
+
+	UDPEchoApp fix: An error was thrown if UDP_I_ERROR was received
+	because it is a cMessage and not a cPacket.
+
+2012-06-04  Tamas Borbely
+
+	Set icon of UPDBasicBurst application.
+
+2012-05-11  Tamas Borbely
+
+	Added 'endToEndDelay' statistics to UDPSink application.
+
 2012-03-20  ------ inet-1.99.4 released ------
 
 2012-02-27  Tamas Borbely

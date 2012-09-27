@@ -293,7 +293,7 @@ void LDP::rebuildFecList()
             continue;
 
         // find out current next hop according to routing table
-        IPv4Address nextHop = (re->getType() == IPv4Route::DIRECT) ? re->getDestination() : re->getGateway();
+        IPv4Address nextHop = (re->getGateway().isUnspecified()) ? re->getDestination() : re->getGateway();
         ASSERT(!nextHop.isUnspecified());
 
         EV << "nextHop <-- " << nextHop << endl;
@@ -677,6 +677,7 @@ void LDP::processLDPPacketFromTCP(LDPPacket *ldpPacket)
     {
     case HELLO:
         error("Received LDP HELLO over TCP (should arrive over UDP)");
+        break;
 
     case ADDRESS:
         // processADDRESS(ldpPacket);
@@ -710,6 +711,7 @@ void LDP::processLDPPacketFromTCP(LDPPacket *ldpPacket)
 
     default:
         error("LDP PROC DEBUG: Unrecognized LDP Message Type, type is %d", ldpPacket->getType());
+        break;
     }
 }
 
@@ -940,6 +942,7 @@ void LDP::processNOTIFICATION(LDPNotify *packet)
 
         default:
             ASSERT(false);
+            break;
     }
 
     delete packet;

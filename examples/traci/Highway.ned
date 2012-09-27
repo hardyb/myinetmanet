@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2006-2011 Christoph Sommer <christoph.sommer@uibk.ac.at>
+// Copyright (C) 2006-2012 Christoph Sommer <christoph.sommer@uibk.ac.at>
 //
 // Documentation for these modules is at http://veins.car2x.org/
 //
@@ -22,6 +22,7 @@ package inet.examples.traci;
 
 import inet.world.radio.ChannelControl;
 import inet.world.traci.TraCIScenarioManager;
+
 
 module Highway
 {

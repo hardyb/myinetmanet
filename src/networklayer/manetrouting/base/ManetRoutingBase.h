@@ -33,7 +33,9 @@
 #include "uint128.h"
 #include "NotifierConsts.h"
 #include "ICMP.h"
+#ifdef WITH_80211MESH
 #include "ILocator.h"
+#endif
 #include "ARP.h"
 #include <vector>
 #include <set>
@@ -88,7 +90,6 @@ class INET_API ManetRoutingBase : public cSimpleModule, public INotifiable, prot
     bool mac_layer_;
     Uint128    hostAddress;
     Uint128    routerId;
-    static const int maxInterfaces = 3;
     double xPosition;
     double yPosition;
     double xPositionPrev;
@@ -131,7 +132,9 @@ class INET_API ManetRoutingBase : public cSimpleModule, public INotifiable, prot
     bool isGateway;
     std::vector<ManetProxyAddress> proxyAddress;
 
+#ifdef WITH_80211MESH
     ILocator *locator;
+#endif
 
   protected:
     ~ManetRoutingBase();
@@ -311,9 +314,11 @@ class INET_API ManetRoutingBase : public cSimpleModule, public INotifiable, prot
     virtual void getApList(const MACAddress &,std::vector<MACAddress>&);
     virtual void getApListIp(const IPv4Address &,std::vector<IPv4Address>&);
     virtual void getListRelatedAp(const Uint128 &, std::vector<Uint128>&);
+    virtual void setRouteInternalStorege(const Uint128 &, const Uint128 &, const bool &);
 
   public:
 //
+    std::string convertAddressToString(const Uint128&);
     virtual void setColaborativeProtocol(cObject *p) {colaborativeProtocol = dynamic_cast<ManetRoutingBase*>(p);}
     virtual ManetRoutingBase * getColaborativeProtocol() const {return colaborativeProtocol;}
     virtual void setStaticNode(bool v) {staticNode=v;}

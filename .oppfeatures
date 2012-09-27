@@ -104,6 +104,7 @@
                        inet.networklayer.ipv6
                        inet.networklayer.autorouting.ipv6
                        inet.networklayer.icmpv6
+                       inet.networklayer.ipv6tunneling
                        inet.nodes.ipv6
                       "
         extraSourceFolders = ""
@@ -132,7 +133,6 @@
         requires = "IPv6"
         labels = "protocols"
         nedPackages = "
-                       inet.networklayer.ipv6tunneling
                        inet.networklayer.xmipv6
                        inet.nodes.xmipv6
                       "
@@ -230,6 +230,34 @@
         linkerFlags = ""
         />
     <feature
+        id="DHCP"
+        name="DHCP"
+        description = "DHCP protocol that can be installed as an UDP application"
+        initiallyEnabled = "true"
+        requires = "UDP IPv4"
+        labels = "protocols dhcp"
+        nedPackages = "
+                       inet.applications.dhcp
+                      "
+        extraSourceFolders = ""
+        compileFlags = "-DWITH_DHCP"
+        linkerFlags = ""
+        />
+    <feature
+        id="DHCP_examples"
+        name="DHCP examples (Ethernet)"
+        description = "examples for DHCP protocol"
+        initiallyEnabled = "true"
+        requires = "DHCP Ethernet mobility radio Ieee80211"
+        labels = "protocols dhcp"
+        nedPackages = "
+                       inet.examples.dhcp
+                      "
+        extraSourceFolders = ""
+        compileFlags = ""
+        linkerFlags = ""
+        />
+    <feature
         id="Ethernet"
         name="Ethernet"
         description = "IEEE 802.3 models (MAC, LLC, Encap) with support for classic
@@ -252,7 +280,7 @@
         id="Ethernet_examples"
         name="Ethernet examples"
         description = "Examples for Ethernet"
-        requires = "Ethernet IPv4"
+        requires = "Ethernet IPv4 TCP_INET"
         labels = "protocols"
         nedPackages = "
                        inet.examples.ethernet
@@ -265,6 +293,7 @@
         id="PPP"
         name="PPP"
         description = "PPP protocol"
+        initiallyEnabled = "true"
         requires = ""
         labels = "protocols"
         nedPackages = "
@@ -325,7 +354,7 @@
         name="MPLS examples"
         description = "Examples for MPLS support"
         initiallyEnabled = "true"
-        requires = "MPLS"
+        requires = "MPLS Ethernet PPP"
         labels = "routing examples"
         nedPackages = "
                        inet.examples.mpls
@@ -354,7 +383,7 @@
         name="OSPFv2 examples"
         description = "Examples for OSPFv2"
         initiallyEnabled = "true"
-        requires = "OSPFv2 UDP IPv4 Ethernet"
+        requires = "OSPFv2 UDP IPv4 PPP Ethernet"
         labels = "routing examples"
         nedPackages = "
                        inet.examples.ospfv2
@@ -383,7 +412,7 @@
         name="BGPv4 examples"
         description = "Examples for BGPv4"
         initiallyEnabled = "true"
-        requires = "BGPv4 TCP_INET UDP IPv4 Ethernet"
+        requires = "BGPv4 TCP_INET UDP IPv4 PPP Ethernet"
         labels = "routing examples"
         nedPackages = "
                        inet.examples.bgpv4
@@ -449,6 +478,36 @@
         linkerFlags = ""
         />
     <feature
+        id="traci"
+        name="TraCI"
+        description = "Integraion modules for TraCI"
+        initiallyEnabled = "true"
+        requires = "IPv4 mobility"
+        labels = ""
+        nedPackages = "
+                       inet.applications.traci
+                       inet.world.traci
+                      "
+        extraSourceFolders = ""
+        compileFlags = "-DWITH_TRACI"
+        linkerFlags = ""
+        />
+    <feature
+        id="traci_examples"
+        name="TraCI Examples"
+        description = "Simple examples for TraCI modules"
+        initiallyEnabled = "true"
+        requires = "traci radio Ieee80211 UDP"
+        labels = ""
+        nedPackages = "
+                       inet.examples.traci
+                       inet.examples.traci_launchd
+                      "
+        extraSourceFolders = ""
+        compileFlags = ""
+        linkerFlags = ""
+        />
+    <feature
         id="radio"
         name="Radio"
         description = "Radio support for wireless simulations"
@@ -458,21 +517,6 @@
                        inet.battery.models
                        inet.linklayer.radio
                        inet.world.radio
-                      "
-        extraSourceFolders = ""
-        compileFlags = ""
-        linkerFlags = ""
-        />
-    <feature
-        id="MF80211"
-        name="802.11b (Mobility Framework)"
-        description = "IEEE 802.11b ad-hoc mode wireless NIC from the Mobility Framework 1.x"
-        initiallyEnabled = "true"
-        requires = "IPv4 mobility radio"
-        labels = "nic wireless"
-        nedPackages = "
-                       inet.linklayer.mf80211
-                       inet.nodes.mf80211
                       "
         extraSourceFolders = ""
         compileFlags = ""
@@ -493,25 +537,11 @@
         linkerFlags = ""
         />
     <feature
-        id="Ieee80211_mesh"
-        name="802.11a/b/g/e (mesh networking mode)"
-        description = "IEEE 802.11a/b/g/e NIC supporting mesh networking"
-        initiallyEnabled = "true"
-        requires = "mobility radio TCP_INET MANET OSPFv2 MPLS UDP IPv4 IPv6"
-        labels = "nic wireless mesh"
-        nedPackages = "
-                       inet.linklayer.ieee80211mesh
-                      "
-        extraSourceFolders = ""
-        compileFlags = ""
-        linkerFlags = ""
-        />
-    <feature
         id="wireless_examples"
         name="wireless examples"
         description = "wireless examples"
         initiallyEnabled = "true"
-        requires = "TCP_INET UDP IPv4 Ethernet Ieee80211 MF80211"
+        requires = "TCP_INET UDP IPv4 Ethernet Ieee80211"
         labels = "nic wireless"
         nedPackages = "
                        inet.examples.adhoc
@@ -548,7 +578,7 @@
         extraSourceFolders = ""
         compileFlags = ""
         linkerFlags = ""
-        />  
+        />
     <feature
         id="HttpTools"
         name="HttpTools"
@@ -581,7 +611,7 @@
         compileFlags = ""
         linkerFlags = ""
         />
-      <feature
+    <feature
         id="HttpTools_examples_socket"
         name="HttpTools examples with socket mode"
         description = "HttpTools examples that include the simulation of TCP and lower layers as well"
@@ -594,7 +624,36 @@
         extraSourceFolders = ""
         compileFlags = ""
         linkerFlags = ""
-        />   
+        />
+    <feature
+        id="DiffServ"
+        name="DiffServ"
+        description = "Components to implement Differentiated Services"
+        initiallyEnabled = "true"
+        requires = ""
+        labels = ""
+        nedPackages = "
+                       inet.networklayer.diffserv
+                      "
+        extraSourceFolders = ""
+        compileFlags = ""
+        linkerFlags = ""
+        />
+    <feature
+        id="DiffServ_examples"
+        name="DiffServ examples"
+        description = "DiffServ examples"
+        initiallyEnabled = "true"
+        requires = "DiffServ PPP Ethernet IPv4 UDP"
+        labels = ""
+        nedPackages = "
+                       inet.examples.diffserv
+                      "
+        extraSourceFolders = ""
+        compileFlags = ""
+        linkerFlags = ""
+        />
+
 <feature
         id="Ieee8021d"
         name="Ieee802.1d Ieee802.1Q Ieee802.1AH protocols"
@@ -604,7 +663,7 @@
         labels = ""
          nedPackages = "
                        inet.linklayer.ieee8021d
-                       inet.nodes.ethernet.Ieee8021d
+                       inet.nodes.Ieee8021d
                       "
         extraSourceFolders = ""
         compileFlags = ""
@@ -656,7 +715,7 @@
                        inet.wpan.nodes
                       "
         extraSourceFolders = ""
-        compileFlags = ""
+        compileFlags = "-DWITH_80215"
         linkerFlags = ""
         />
     <feature
@@ -670,36 +729,7 @@
                        inet.wpan.linklayer.bmac
                       "
         extraSourceFolders = ""
-        compileFlags = ""
-        linkerFlags = ""
-        />
-
-    <feature
-        id="DHCP"
-        name="IPv4 DHCP"
-        description = "DHCP protocol"
-        initiallyEnabled = "true"
-        requires = "UDP IPv4 Ethernet Ieee80211"
-        labels = ""
-        nedPackages = "
-                       inet.applications.dhcp
-                      "
-        extraSourceFolders = ""
-        compileFlags = "-DWITH_DHCP"
-        linkerFlags = ""
-        />
-    <feature
-        id="DHCP_examples"
-        name="DHCP examples"
-        description = "DHCP examples"
-        initiallyEnabled = "true"
-        requires = "DHCP"
-        labels = ""
-        nedPackages = "
-                       inet.examples.dhcp
-                      "
-        extraSourceFolders = ""
-        compileFlags = ""
+        compileFlags = "-DWITH_BMAC"
         linkerFlags = ""
         />
     <feature
@@ -717,6 +747,20 @@
                       "
         extraSourceFolders = ""
         compileFlags = ""
+        linkerFlags = ""
+        />
+ <feature
+        id="Ieee80211_mesh"
+        name="802.11a/b/g/e (mesh networking mode)"
+        description = "IEEE 802.11a/b/g/e NIC supporting mesh networking"
+        initiallyEnabled = "true"
+        requires = "mobility radio TCP_INET MANET OSPFv2 MPLS UDP IPv4 IPv6"
+        labels = "nic wireless mesh"
+        nedPackages = "
+                       inet.linklayer.ieee80211mesh
+                      "
+        extraSourceFolders = ""
+        compileFlags = "-DWITH_80211MESH"
         linkerFlags = ""
         />
 </features>

@@ -53,13 +53,12 @@ class INET_API IInterfaceTable
     virtual cModule *getHostModule() = 0;
 
     /**
-     * Adds an interface. The second argument should be a module which belongs
-     * to the physical interface (e.g. PPP or EtherMac) -- it will be used
+     * Adds an interface. The entry->getInterfaceModule() will be used
      * to discover and fill in getNetworkLayerGateIndex(), getNodeOutputGateId(),
      * and getNodeInputGateId() in InterfaceEntry. It should be NULL if this is
      * a virtual interface (e.g. loopback).
      */
-    virtual void addInterface(InterfaceEntry *entry, cModule *ifmod) = 0;
+    virtual void addInterface(InterfaceEntry *entry) = 0;
 
     /**
      * Deletes the given interface from the table. Indices of existing
@@ -108,6 +107,12 @@ class INET_API IInterfaceTable
      * Returns NULL if not found.
      */
     virtual InterfaceEntry *getInterfaceByNetworkLayerGateIndex(int index) = 0;
+
+    /**
+     * Returns an interface by one of its component module (e.g. PPP).
+     * Returns NULL if not found.
+     */
+    virtual InterfaceEntry *getInterfaceByInterfaceModule(cModule *ifmod) = 0;
 
     /**
      * Returns an interface given by its name. Returns NULL if not found.

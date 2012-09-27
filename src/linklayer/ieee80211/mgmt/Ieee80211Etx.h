@@ -66,7 +66,13 @@ class MacEtxNeighbor
     int     numFailures;
   public:
     std::vector<simtime_t> timeVector;
-    std::vector<simtime_t> timeETT;
+    class ETTData
+    {
+        public:
+            simtime_t recordTime;
+            simtime_t delay;
+    };
+    std::vector<ETTData> timeETT;
     std::vector<SNRDataTime> signalToNoiseAndSignal; // S/N received
   public:
     MacEtxNeighbor() {packets = 0; time = 0; numFailures = 0;}
@@ -119,16 +125,43 @@ class INET_API Ieee80211Etx : public cSimpleModule, public MacEstimateCostProces
     simtime_t etxInterval;
     simtime_t ettInterval;
     simtime_t etxMeasureInterval;
+    simtime_t ettMeasureInterval;
     int ettWindow;
     int etxSize;
     int ettSize1;
     int ettSize2;
     simtime_t maxLive;
-    MACAddress prevAddress;
-    simtime_t  prevTime;
+
+    double hysteresis;
+    long unsigned int ettIndex;
+    class InfoEttData
+    {
+        public:
+            long unsigned int ettIndex;
+            simtime_t  prevTime;
+    };
+    typedef std::map<MACAddress,InfoEttData> InfoEtt;
+    InfoEtt infoEtt;
+
     int powerWindow;
     simtime_t powerWindowTime;
     unsigned int numInterfaces;
+
+    void checkSizeEtxArray(MacEtxNeighbor *neig)
+    {
+        while (!neig->timeVector.empty() && (simTime() - neig->timeVector.front() > (etxMeasureInterval + hysteresis)))
+            neig->timeVector.erase(neig->timeVector.begin());
+        while (neig->timeVector.size() > etxMeasureInterval / etxInterval)
+            neig->timeVector.erase(neig->timeVector.begin());
+    }
+
+    void checkSizeEttArray(MacEtxNeighbor *neig)
+    {
+        if (neig->timeETT.empty())
+            return;
+        while (simTime() - neig->timeETT.front().recordTime > ettMeasureInterval)
+            neig->timeETT.erase(neig->timeETT.begin());
+    }
 
   protected:
     virtual int numInitStages() const {return 3;}
@@ -147,6 +180,8 @@ class INET_API Ieee80211Etx : public cSimpleModule, public MacEstimateCostProces
   public:
     virtual double getEtx(const MACAddress &add,const int &iface = 0);
     virtual int getEtx(const MACAddress &add, double &val);
+    virtual int getEtxEtt(const MACAddress &add, double &etx, double &ett);
+
 
     virtual double getEtt(const MACAddress &add,const int &iface = 0);
     virtual int getEtt(const MACAddress &add, double &val);

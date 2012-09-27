@@ -506,6 +506,7 @@ WifiModulationType::GetOfdmRate13_5MbpsBW5MHz()
 ModulationType
 WifiModulationType:: getMode80211a(double bitrate)
 {
+    //FIXME Refactor! Use concrete bitrates instead table elements!
    if (bitrate == BITRATES_80211a[7])
        return GetOfdmRate54Mbps();
    else if (bitrate == BITRATES_80211a[6])
@@ -530,6 +531,7 @@ WifiModulationType:: getMode80211a(double bitrate)
 ModulationType
 WifiModulationType:: getMode80211g(double bitrate)
 {
+    //FIXME Refactor! Use concrete bitrates instead table elements!
    if (bitrate == BITRATES_80211g[11])
        return GetErpOfdmRate54Mbps();
    else if (bitrate == BITRATES_80211g[10])
@@ -563,6 +565,7 @@ WifiModulationType:: getMode80211g(double bitrate)
 ModulationType
 WifiModulationType:: getMode80211b(double bitrate)
 {
+    //FIXME Refactor! Use concrete bitrates instead table elements!
    if (bitrate == BITRATES_80211b[3])
        return GetDsssRate11Mbps();
    else if (bitrate == BITRATES_80211b[2])
@@ -580,6 +583,7 @@ WifiModulationType:: getMode80211b(double bitrate)
 ModulationType
 WifiModulationType::getMode80211p(double bitrate)
 {
+    //FIXME Refactor! Use concrete bitrates instead table elements!
    if (bitrate == BITRATES_80211p[7])
        return GetOfdmRate27MbpsBW10MHz();
    else if (bitrate == BITRATES_80211p[6])
@@ -625,6 +629,7 @@ WifiModulationType::getPlcpHeaderDuration(ModulationType payloadMode, WifiPreamb
                   // IEEE Std 802.11-2007, section 17.3.2.3, table 17-4
                   return 16.0/1000000.0;
           }
+          break;
       }
       case MOD_CLASS_ERP_OFDM:
           return 16.0/1000000.0;
@@ -668,6 +673,7 @@ WifiModulationType::getPlcpPreambleDuration(ModulationType payloadMode, WifiPrea
                 // also section 17.3.2.3, table 17-4
                     return 64.0/1000000.0;
             }
+            break;
         }
         case MOD_CLASS_ERP_OFDM:
             return 4.0/1000000.0;
@@ -707,13 +713,13 @@ WifiModulationType::getPayloadDuration(uint64_t size, ModulationType payloadMode
                 case 20000000:
                 default:
                     symbolDurationUs = 4;
-                break;
+                    break;
                 case 10000000:
                     symbolDurationUs = 8;
-                break;
+                    break;
                 case 5000000:
                     symbolDurationUs = 16;
-                break;
+                    break;
             }
             // IEEE Std 802.11-2007, section 17.3.2.2, table 17-3
             // corresponds to N_{DBPS} in the table
@@ -781,6 +787,7 @@ WifiModulationType::getPlcpHeaderMode(ModulationType payloadMode, WifiPreamble p
                 // same mode of the payload
                     return WifiModulationType::GetOfdmRate6Mbps();
             }
+            break;
         }
         case MOD_CLASS_ERP_OFDM:
             return WifiModulationType::GetErpOfdmRate6Mbps();
@@ -822,6 +829,7 @@ WifiModulationType::getSlotDuration(ModulationType modType, WifiPreamble preambl
                     // same mode of the payload
                     return (9/1000000);
             }
+            break;
         }
         case MOD_CLASS_ERP_OFDM:
             if (preamble == WIFI_PREAMBLE_LONG)
@@ -862,6 +870,7 @@ WifiModulationType::getSifsTime(ModulationType modType, WifiPreamble preamble)
                     // same mode of the payload
                     return (16/1000000);
             }
+            break;
         }
         case MOD_CLASS_ERP_OFDM:
             // IEEE Std 802.11-2007, sections 15.2.3 and 18.2.2.1

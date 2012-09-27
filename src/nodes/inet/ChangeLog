@@ -1,3 +1,12 @@
+2012-08-07  ------ inet-2.0.0 released ------
+
+2012-06-25  ------ inet-1.99.5 released ------
+
+2012-06-15  Zoltan Bojthe
+
+	Changes in network interfaces:
+	- renamed netwIn, netwOut gates to upperLayerIn, upperLayerOut
+
 2012-03-20  ------ inet-1.99.4 released ------
 
 2012-01-26  Zoltan Bojthe

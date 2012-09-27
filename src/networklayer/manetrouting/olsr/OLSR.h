@@ -389,6 +389,12 @@ class OLSR : public ManetRoutingBase
     std::vector<OLSR_msg>   msgs_;
     /// Routing table.
     OLSR_rtable     rtable_;
+
+    typedef std::map<nsaddr_t,OLSR_rtable*> GlobalRtable;
+    static GlobalRtable globalRtable;
+    typedef std::map<nsaddr_t,std::vector<nsaddr_t> > DistributionPath;
+    static DistributionPath distributionPath;
+    bool computed;
     /// Internal state with all needed data structs.
 
     OLSR_state      *state_ptr;
@@ -401,11 +407,11 @@ class OLSR : public ManetRoutingBase
     uint16_t    ansn_;
 
     /// HELLO messages' emission interval.
-    int     hello_ival_;
+    SimTime     hello_ival_;
     /// TC messages' emission interval.
-    int     tc_ival_;
+    SimTime     tc_ival_;
     /// MID messages' emission interval.
-    int     mid_ival_;
+    SimTime     mid_ival_;
     /// Willingness for forwarding packets on behalf of other nodes.
     int     willingness_;
     /// Determines if layer 2 notifications are enabled or not.
@@ -415,6 +421,8 @@ class OLSR : public ManetRoutingBase
 
     /// Address of the routing agent.
     nsaddr_t ra_addr_;
+
+    bool optimizedMid;
 
   protected:
 // Omnet INET vaiables and functions
@@ -449,9 +457,9 @@ class OLSR : public ManetRoutingBase
 
     inline nsaddr_t&    ra_addr()   { return ra_addr_;}
 
-    inline int&     hello_ival()    { return hello_ival_;}
-    inline int&     tc_ival()   { return tc_ival_;}
-    inline int&     mid_ival()  { return mid_ival_;}
+    inline SimTime&     hello_ival()    { return hello_ival_;}
+    inline SimTime&     tc_ival()   { return tc_ival_;}
+    inline SimTime&     mid_ival()  { return mid_ival_;}
     inline int&     willingness()   { return willingness_;}
     inline int&     use_mac()   { return use_mac_;}
 
@@ -496,7 +504,7 @@ class OLSR : public ManetRoutingBase
     virtual void        rm_dup_tuple(OLSR_dup_tuple*);
     virtual void        add_link_tuple(OLSR_link_tuple*, uint8_t);
     virtual void        rm_link_tuple(OLSR_link_tuple*);
-    virtual void        updated_link_tuple(OLSR_link_tuple*);
+    virtual void        updated_link_tuple(OLSR_link_tuple*, uint8_t willingness);
     virtual void        add_nb_tuple(OLSR_nb_tuple*);
     virtual void        rm_nb_tuple(OLSR_nb_tuple*);
     virtual void        add_nb2hop_tuple(OLSR_nb2hop_tuple*);
@@ -507,6 +515,7 @@ class OLSR : public ManetRoutingBase
     virtual void        rm_topology_tuple(OLSR_topology_tuple*);
     virtual void        add_ifaceassoc_tuple(OLSR_iface_assoc_tuple*);
     virtual void        rm_ifaceassoc_tuple(OLSR_iface_assoc_tuple*);
+    virtual OLSR_nb_tuple*    find_or_add_nb(OLSR_link_tuple*, uint8_t willingness);
 
     const nsaddr_t  & get_main_addr(const nsaddr_t&) const;
     virtual int     degree(OLSR_nb_tuple*);
@@ -522,6 +531,12 @@ class OLSR : public ManetRoutingBase
     //virtual void processPromiscuous(const cObject *details){};
     virtual void processLinkBreak(const cObject *details);
     virtual void scheduleNextEvent();
+
+    Uint128 getIfaceAddressFromIndex(int index);
+
+    const char * getNodeId(const nsaddr_t &addr);
+
+    void computeDistributionPath(const nsaddr_t &initNode);
 
   public:
     OLSR() {}
@@ -543,6 +558,9 @@ class OLSR : public ManetRoutingBase
     virtual bool getNextHopGroup(const AddressGroup &gr, Uint128 &add, int &iface, Uint128&);
     virtual int  getRouteGroup(const Uint128&, std::vector<Uint128> &, Uint128&, bool &, int group = 0);
     virtual bool getNextHopGroup(const Uint128&, Uint128 &add, int &iface, Uint128&, bool &, int group = 0);
+
+    //
+    virtual void getDistributionPath(const Uint128&,std::vector<Uint128> &path);
 };
 
 #endif

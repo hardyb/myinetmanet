@@ -1,3 +1,44 @@
+2012-08-07  ------ inet-2.0.0 released ------
+
+2012-06-25  ------ inet-1.99.5 released ------
+
+2012-07-11  Zoltan Bojthe
+
+	Fixed connection detection:
+	When two modules are connected, EtherMAC now throws error if
+	the phys gates are not connected using a transmission channel.
+	Previously, connection status was set to "not connected" if
+	modules were connected via idealChannel or other non-transmission
+	channel which was very misleading.
+
+2012-06-15  Zoltan Bojthe
+
+	Renamed netwIn, netwOut gates to upperLayerIn, upperLayerOut
+
+2012-04-27  Tamas Borbely
+
+	Added optional ITrafficConditioner modules into the
+	ingress and egress path of EthernetInterface.
+
+2012-04-26  Tamas Borbely
+
+	EthernetInterface: EthDropTailQosQueue has been replaced with
+	EtherQoSQueue. EtherQosQueue handles PAUSE frames, and can
+	be parametrized with an IOutputQueue module which serves the
+	data frames.
+
+2012-04-26  Tamas Borbely
+
+	EthernetInterface: the inner queue is the default queue.
+	(It was an external DropTailQueue before.)
+
+2012-04-24  Tamas Borbely
+
+	EthernetInterface: compound modules are accepted as external queue
+	module. The module must implement IOutputQueue, and the C++
+	class of the simple module connected to the "out" gate must
+	implement IPassiveQueue.
+
 2012-03-20  ------ inet-1.99.4 released ------
 
 2012-02-24  ------ inet-1.99.3 released ------

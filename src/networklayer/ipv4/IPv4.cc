@@ -16,6 +16,7 @@
 //
 
 
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -34,7 +35,7 @@
 
 Define_Module(IPv4);
 
-extern void (*recordDataStatsCallBack) (double stat);
+#define NEWFRAGMENT
 
 void IPv4::initialize()
 {
@@ -302,6 +303,7 @@ void IPv4::handleReceivedICMP(ICMPMessage *msg)
             // ICMP_TIMESTAMP_REQUEST, ICMP_TIMESTAMP_REPLY, etc.
             int gateindex = mapping.getOutputGateForProtocol(IP_PROT_ICMP);
             send(msg, "transportOut", gateindex);
+            break;
         }
     }
 }
@@ -506,8 +508,6 @@ void IPv4::routeUnicastPacket(IPv4Datagram *datagram, InterfaceEntry *destIE, IP
         EV << "output interface is " << destIE->getName() << ", next-hop address: " << nextHopAddr << "\n";
         numForwarded++;
         fragmentAndSend(datagram, destIE, nextHopAddr);
-        // HERE
-        recordDataStatsCallBack(1.0);
     }
 }
 

@@ -82,7 +82,7 @@ void ExtInterface::initialize(int stage)
 
 InterfaceEntry *ExtInterface::registerInterface()
 {
-    InterfaceEntry *e = new InterfaceEntry();
+    InterfaceEntry *e = new InterfaceEntry(this);
 
     // interface name: our module name without special characters ([])
     e->setName(OPP_Global::stripnonalnum(getFullName()).c_str());
@@ -91,7 +91,7 @@ InterfaceEntry *ExtInterface::registerInterface()
     e->setMulticast(true);
     e->setPointToPoint(true);
     IInterfaceTable *ift = InterfaceTableAccess().get();
-    ift->addInterface(e, this);
+    ift->addInterface(e);
     return e;
 }
 
@@ -130,7 +130,7 @@ void ExtInterface::handleMessage(cMessage *msg)
             (ipPacket->getTransportProtocol() != IP_PROT_TCP) &&
             (ipPacket->getTransportProtocol() != IP_PROT_UDP))
         {
-            EV << "Can not send packet. Protocol " << ipPacket->getTransportProtocol() << " is not supported.\n";
+            EV << "Cannot send packet. Protocol " << ipPacket->getTransportProtocol() << " is not supported.\n";
             numDropped++;
             delete (msg);
             return;

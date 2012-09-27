@@ -1,3 +1,28 @@
+2012-08-07  ------ inet-2.0.0 released ------
+
+2012-06-25  ------ inet-1.99.5 released ------
+
+2012-06-15  Zoltan Bojthe
+
+	- InterfaceEntry constructor changed: Now it stores a pointer to related 
+	  interface module
+
+	- InterfaceTable uses the stored interfaceModule ptr in InterfaceEntry instead
+	  of taking it as a parameter
+	  
+	- modified gate/connection validation in InterfaceTable
+
+	- bugfix: cGate::getDisplayString() has a side effect by creating an
+	  empty channel when there was no channel attached to the gate previously.
+	  solution: if no channel is connected to the gate do not call the getDisplayString()
+	  method at all.
+
+2012-04-13  Tamas Borbely
+
+	Added getInterfaceByInterfaceModule(cModule*) method to InterfaceTable.
+	It returns the InterfaceEntry* that belongs to the interface
+	containing the specified module.
+
 2012-03-20  ------ inet-1.99.4 released ------
 
 2012-03-04  Levente Meszaros
@@ -7,7 +32,7 @@
 
 2012-02-14  Tamas Borbely
 
-    Added getFirstMulticastInterface() to the InterfaceTable
+	Added getFirstMulticastInterface() to the InterfaceTable
 
 2012-02-24  ------ inet-1.99.3 released ------
 

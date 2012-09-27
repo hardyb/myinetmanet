@@ -735,6 +735,9 @@ void Radio::changeChannel(int channel)
     snrInfo.ptr = NULL;
     snrInfo.sList.clear();
 
+    // reset the noiseLevel
+    noiseLevel = thermalNoise;
+
     if (rs.getState()!=RadioState::IDLE)
         rs.setState(RadioState::IDLE); // Force radio to Idle
 
@@ -1098,8 +1101,8 @@ void Radio::getSensitivityList(cXMLElement* xmlConfig)
         return;
     }
 
-    // iterate over all AnalogueModel-entries, get a new AnalogueModel instance and add
-    // it to analogueModels
+    // iterate over all sensitivity-entries, get a new instance and add
+    // it to sensitivityList
     for (cXMLElementList::const_iterator it = sensitivityXmlList.begin(); it != sensitivityXmlList.end(); it++)
     {
 

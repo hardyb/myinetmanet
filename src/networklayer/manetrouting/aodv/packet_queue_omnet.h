@@ -16,7 +16,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * Authors: Erik Nordstr�m, <erik.nordstrom@it.uu.se>
+ * Authors: Erik Nordström, <erik.nordstrom@it.uu.se>
  *
  *****************************************************************************/
 #ifndef _PACKET_QUEUE_H
@@ -52,6 +52,7 @@ struct packet_queue
     list_t head;
     unsigned int len;
     struct timer garbage_collect_timer;
+    unsigned int length() { return len; }
 };
 #else
 struct q_pkt
@@ -65,6 +66,7 @@ struct packet_queue
 {
     std::vector<q_pkt*> pkQueue;
     struct timer garbage_collect_timer;
+    unsigned int length() { return pkQueue.size(); }
 };
 
 #endif

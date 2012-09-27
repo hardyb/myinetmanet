@@ -91,14 +91,6 @@ OLSR_ETX::initialize(int stage)
     {
         if (isInMacLayer())
             OlsrAddressSize::ADDR_SIZE = 6;
-        OLSR_HELLO_INTERVAL = par("OLSR_HELLO_INTERVAL");
-
- 	/// TC messages emission interval.
- 	    OLSR_TC_INTERVAL = par("OLSR_TC_INTERVAL");
-
- 	/// MID messages emission interval.
- 	    OLSR_MID_INTERVAL = par("OLSR_MID_INTERVAL");//   OLSR_TC_INTERVAL
-
  	///
  	/// \brief Period at which a node must cite every link and every neighbor.
  	///
@@ -113,6 +105,14 @@ OLSR_ETX::initialize(int stage)
         mid_ival_ = par("Mid_ival");
         use_mac_ = par("use_mac");
 
+
+        OLSR_HELLO_INTERVAL = SIMTIME_DBL(hello_ival_);
+
+    /// TC messages emission interval.
+        OLSR_TC_INTERVAL = SIMTIME_DBL(tc_ival_);
+
+    /// MID messages emission interval.
+        OLSR_MID_INTERVAL = SIMTIME_DBL(mid_ival_);//   OLSR_TC_INTERVAL
 
 
         if ( par("Fish_eye"))
@@ -168,9 +168,26 @@ OLSR_ETX::initialize(int stage)
         midTimer = new OLSR_MidTimer(); ///< Timer for sending MID messages.
         linkQualityTimer = new OLSR_ETX_LinkQualityTimer();
 
-        hello_timer_.resched(hello_ival_);
-        tc_timer_.resched(hello_ival_);
-        mid_timer_.resched(hello_ival_);
+        state_ptr = state_etx_ptr = new OLSR_ETX_state();
+
+        for (int i = 0; i< getNumWlanInterfaces(); i++)
+        {
+            // Create never expiring interface association tuple entries for our
+            // own network interfaces, so that GetMainAddress () works to
+            // translate the node's own interface addresses into the main address.
+            OLSR_iface_assoc_tuple* tuple = new OLSR_iface_assoc_tuple;
+            int index = getWlanInterfaceIndex(i);
+            tuple->iface_addr() = getIfaceAddressFromIndex(index);
+            tuple->main_addr() = ra_addr();
+            tuple->time() = simtime_t::getMaxTime().dbl();
+            tuple->local_iface_index() = index;
+            add_ifaceassoc_tuple(tuple);
+        }
+
+
+        hello_timer_.resched(SIMTIME_DBL(hello_ival_));
+        tc_timer_.resched(SIMTIME_DBL(hello_ival_));
+        mid_timer_.resched(SIMTIME_DBL(hello_ival_));
         link_quality_timer_.resched(0.0);
 
         useIndex = false;
@@ -179,7 +196,6 @@ OLSR_ETX::initialize(int stage)
         {
             linkLayerFeeback();
         }
-        state_ptr = state_etx_ptr = new OLSR_ETX_state();
         scheduleNextEvent();
 
     }
@@ -230,6 +246,7 @@ OLSR_ETX::recv_olsr(cMessage* msg)
 
 // Process Olsr information
     assert(op->msgArraySize() >= 0 && op->msgArraySize() <= OLSR_MAX_MSGS);
+    nsaddr_t receiverIfaceAddr = getIfaceAddressFromIndex(index);
     for (int i = 0; i < (int) op->msgArraySize(); i++)
     {
         OLSR_ETX_msg& msg = op->msg(i);
@@ -249,17 +266,17 @@ OLSR_ETX::recv_olsr(cMessage* msg)
         {
             // Process the message according to its type
             if (msg.msg_type() == OLSR_HELLO_MSG)
-                process_hello(msg, ra_addr(), src_addr, op->pkt_seq_num(), index);
+                process_hello(msg, receiverIfaceAddr, src_addr, op->pkt_seq_num(), index);
             else if (msg.msg_type() == OLSR_TC_MSG)
                 process_tc(msg, src_addr, index);
             else if (msg.msg_type() == OLSR_MID_MSG)
                 process_mid(msg, src_addr, index);
             else
             {
-                debug("%f: Node %d can not process OLSR packet because does not "
+                debug("%f: Node %s can not process OLSR packet because does not "
                       "implement OLSR type (%x)\n",
                       CURRENT_TIME,
-                      OLSR::node_id(ra_addr()),
+                      getNodeId(ra_addr()),
                       msg.msg_type());
             }
         }
@@ -271,7 +288,7 @@ OLSR_ETX::recv_olsr(cMessage* msg)
                     it != duplicated->iface_list().end();
                     it++)
             {
-                if (*it == ra_addr())
+                if (*it == receiverIfaceAddr)
                 {
                     do_forwarding = false;
                     break;
@@ -285,7 +302,7 @@ OLSR_ETX::recv_olsr(cMessage* msg)
             // TC and MID messages are forwarded using the default algorithm.
             // Remaining messages are also forwarded using the default algorithm.
             if (msg.msg_type() != OLSR_HELLO_MSG)
-                forward_default(msg, duplicated, ra_addr(), src_addr);
+                forward_default(msg, duplicated, receiverIfaceAddr, src_addr);
         }
 
     }
@@ -1197,7 +1214,7 @@ OLSR_ETX::rtable_dijkstra_computation()
     omnet_clean_rte();
     nsaddr_t netmask (IPv4Address::ALLONES_ADDRESS.getInt());
 
-    debug("Current node %d:\n", (uint32_t)ra_addr());
+    debug("Current node %s:\n", getNodeId(ra_addr()));
     // Iterate through all out 1 hop neighbors
     for (nbset_t::iterator it = nbset().begin(); it != nbset().end(); it++)
     {
@@ -1209,8 +1226,8 @@ OLSR_ETX::rtable_dijkstra_computation()
         // Add this edge to the graph we are building
         if (best_link)
         {
-            debug("nb_tuple: %d (local) ==> %d , delay %lf, quality %lf\n", (uint32_t)best_link->local_iface_addr(),
-                   (uint32_t)nb_tuple->nb_main_addr(), best_link->nb_link_delay(), best_link->etx());
+            debug("nb_tuple: %s (local) ==> %s , delay %lf, quality %lf\n", getNodeId(best_link->local_iface_addr()),
+                    getNodeId(nb_tuple->nb_main_addr()), best_link->nb_link_delay(), best_link->etx());
             dijkstra->add_edge(nb_tuple->nb_main_addr(), best_link->local_iface_addr(),
                                 best_link->nb_link_delay(), best_link->etx(), true);
         }
@@ -1280,8 +1297,8 @@ OLSR_ETX::rtable_dijkstra_computation()
             // Add this edge to the graph we are building. The last hop is our 1 hop
             // neighbor that has the best link to the current two hop neighbor. And
             // nb2hop_addr is not directly connected to this node
-            debug("nb2hop_tuple: %d (local) ==> %d , delay %lf, quality %lf\n", (uint32_t)nb_main_addr,
-                   (uint32_t)nb2hop_tuple->nb2hop_addr(), nb2hop_tuple->nb_link_delay(), nb2hop_tuple->etx());
+            debug("nb2hop_tuple: %s (local) ==> %s , delay %lf, quality %lf\n", getNodeId(nb_main_addr),
+                    getNodeId(nb2hop_tuple->nb2hop_addr()), nb2hop_tuple->nb_link_delay(), nb2hop_tuple->etx());
             dijkstra->add_edge(nb2hop_tuple->nb2hop_addr(), nb_main_addr,
                                 nb2hop_tuple->nb_link_delay(), nb2hop_tuple->etx(), false);
         }
@@ -1302,8 +1319,8 @@ OLSR_ETX::rtable_dijkstra_computation()
         // Add this edge to the graph we are building. The last hop is our 1 hop
         // neighbor that has the best link to the current two hop. And dest_addr
         // is not directly connected to this node
-        debug("topology_tuple: %d (local) ==> %d , delay %lf, quality %lf\n", (uint32_t)topology_tuple->last_addr(),
-               (uint32_t)topology_tuple->dest_addr(), topology_tuple->nb_link_delay(), topology_tuple->etx());
+        debug("topology_tuple: %s (local) ==> %sd , delay %lf, quality %lf\n", getNodeId(topology_tuple->last_addr()),
+                getNodeId(topology_tuple->dest_addr()), topology_tuple->nb_link_delay(), topology_tuple->etx());
         dijkstra->add_edge(topology_tuple->dest_addr(), topology_tuple->last_addr(),
                             topology_tuple->nb_link_delay(), topology_tuple->etx(), false);
     }
@@ -1763,7 +1780,7 @@ OLSR_ETX::send_hello()
     msg.msg_seq_num() = msg_seq();
 
     msg.hello().reserved() = 0;
-    msg.hello().htime() = OLSR::seconds_to_emf(hello_ival());
+    msg.hello().htime() = OLSR::seconds_to_emf(SIMTIME_DBL(hello_ival()));
     msg.hello().willingness() = willingness();
     msg.hello().count = 0;
 
@@ -1800,7 +1817,7 @@ OLSR_ETX::send_hello()
                         nb_it++)
                 {
                     OLSR_nb_tuple* nb_tuple = *nb_it;
-                    if (nb_tuple->nb_main_addr() == link_tuple->nb_iface_addr())
+                    if (nb_tuple->nb_main_addr() == get_main_addr(link_tuple->nb_iface_addr()))
                     {
                         if (nb_tuple->getStatus() == OLSR_STATUS_SYM)
                             nb_type = OLSR_SYM_NEIGH;
@@ -1808,9 +1825,7 @@ OLSR_ETX::send_hello()
                             nb_type = OLSR_NOT_NEIGH;
                         else
                         {
-                            fprintf(stderr, "There is a neighbor tuple"
-                                    " with an unknown status!\n");
-                            exit(1);
+                            error("There is a neighbor tuple with an unknown status!");
                         }
                         ok = true;
                         break;
@@ -1818,9 +1833,8 @@ OLSR_ETX::send_hello()
                 }
                 if (!ok)
                 {
-                    fprintf(stderr, "Link tuple has no corresponding"
-                            " Neighbor tuple\n");
-                    exit(1);
+                    EV << "I don't know the neighbor " << get_main_addr(link_tuple->nb_iface_addr()) << "!!! \n";
+                    continue;
                 }
             }
 
@@ -2215,7 +2229,7 @@ OLSR_ETX::link_sensing
     link_tuple->time() = MAX(link_tuple->time(), link_tuple->asym_time());
 
     if (updated)
-        updated_link_tuple(link_tuple);
+        updated_link_tuple(link_tuple, hello.willingness());
     // Schedules link tuple deletion
     if (created && link_tuple != NULL)
     {
@@ -2426,10 +2440,10 @@ OLSR_ETX::populate_nb2hopset(OLSR_msg& msg)
 void
 OLSR_ETX::nb_loss(OLSR_link_tuple* tuple)
 {
-    debug("%f: Node %d detects neighbor %d loss\n", CURRENT_TIME,
-          OLSR::node_id(ra_addr()), OLSR::node_id(tuple->nb_iface_addr()));
+    debug("%f: Node %s detects neighbor %s loss\n", CURRENT_TIME,
+            getNodeId(ra_addr()), getNodeId(tuple->nb_iface_addr()));
 
-    updated_link_tuple(tuple);
+    updated_link_tuple(tuple, OLSR_WILL_DEFAULT);
     state_.erase_nb2hop_tuples(get_main_addr(tuple->nb_iface_addr()));
     state_.erase_mprsel_tuples(get_main_addr(tuple->nb_iface_addr()));
 

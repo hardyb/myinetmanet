@@ -122,10 +122,10 @@ OLSROPT::recv_olsr(cMessage* msg)
                 process_mid(msg, src_addr, index);
             else
             {
-                debug("%f: Node %d can not process OLSR packet because does not "
+                debug("%f: Node %s can not process OLSR packet because does not "
                       "implement OLSR type (%x)\n",
                       CURRENT_TIME,
-                      OLSROPT::node_id(ra_addr()),
+                      getNodeId(ra_addr()),
                       msg.msg_type());
             }
         }
@@ -395,7 +395,7 @@ OLSROPT::link_sensing(OLSR_msg& msg, const nsaddr_t &receiver_iface, const nsadd
     link_tuple->time() = MAX(link_tuple->time(), link_tuple->asym_time());
 
     if (updated)
-        updated_link_tuple(link_tuple);
+        updated_link_tuple(link_tuple, hello.willingness());
 
     // Schedules link tuple deletion
     if (created && link_tuple != NULL)
@@ -525,12 +525,12 @@ void
 OLSROPT::nb_loss(OLSR_link_tuple* tuple)
 {
 	bool topologychanged = false;
-    debug("%f: Node %d detects neighbor %d loss\n",
+    debug("%f: Node %s detects neighbor %s loss\n",
           CURRENT_TIME,
-          OLSR::node_id(ra_addr()),
-          OLSR::node_id(tuple->nb_iface_addr()));
+          getNodeId(ra_addr()),
+          getNodeId(tuple->nb_iface_addr()));
 
-    updated_link_tuple(tuple);
+    updated_link_tuple(tuple, OLSR_WILL_DEFAULT);
     topologychanged += state_.erase_nb2hop_tuples(get_main_addr(tuple->nb_iface_addr()));
     topologychanged += state_.erase_mprsel_tuples(get_main_addr(tuple->nb_iface_addr()));
     mpr_computation();

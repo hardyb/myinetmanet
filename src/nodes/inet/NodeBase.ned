@@ -48,9 +48,9 @@ module NodeBase
         int numPcapRecorders = default(0); // no of PcapRecorders.
         string mobilityType = default("StationaryMobility");
         string routingFile = default("");
-        string batteryType = default("");
         bool IPForward = default(true);
         bool forwardMulticast = default(false);
+        string batteryType = default("");
     gates:
         input radioIn[numRadios] @directIn;
         inout pppg[] @labels(PPPFrame-conn);
@@ -59,6 +59,11 @@ module NodeBase
         notificationBoard: NotificationBoard {
             parameters:
                 @display("p=53,194");
+        }
+
+        battery: <batteryType> like IBattery if batteryType != "" {
+            parameters:
+                @display("p=53,77;i=block/plug;is=s");
         }
 
         // optional mobility module. Required only if wireless cards are present
@@ -106,9 +111,6 @@ module NodeBase
         ext[numExtInterfaces]: <default("ExtInterface")> like IExternalNic {
             parameters:
                 @display("p=547,386,row,90;q=txQueue;i=block/ifcard");
-        }
-        battery: <batteryType> like IBattery if batteryType != ""{
-            @display("p=53,50;is=s");
         }
 
     connections allowunconnected:

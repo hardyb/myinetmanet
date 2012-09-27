@@ -202,7 +202,15 @@ void EtherMACBase::initializeQueueModule()
     if (par("queueModule").stringValue()[0])
     {
         cModule *module = getParentModule()->getSubmodule(par("queueModule").stringValue());
-        IPassiveQueue *queueModule = check_and_cast<IPassiveQueue *>(module);
+        IPassiveQueue *queueModule;
+        if (module->isSimple())
+            queueModule = check_and_cast<IPassiveQueue *>(module);
+        else
+        {
+            cGate *queueOut = module->gate("out")->getPathStartGate();
+            queueModule = check_and_cast<IPassiveQueue *>(queueOut->getOwnerModule());
+        }
+
         EV << "Requesting first frame from queue module\n";
         txQueue.setExternalQueue(queueModule);
 
@@ -238,7 +246,7 @@ void EtherMACBase::initializeFlags()
     duplexMode = true;
 
     // initialize connected flag
-    connected = physOutGate->getPathEndGate()->isConnected();
+    connected = physOutGate->getPathEndGate()->isConnected() && physInGate->getPathStartGate()->isConnected();
 
     if (!connected)
         EV << "MAC not connected to a network.\n";
@@ -298,7 +306,7 @@ void EtherMACBase::initializeStatistics()
 
 void EtherMACBase::registerInterface()
 {
-    interfaceEntry = new InterfaceEntry();
+    interfaceEntry = new InterfaceEntry(this);
 
     // interface name: NIC module's name without special characters ([])
     interfaceEntry->setName(OPP_Global::stripnonalnum(getParentModule()->getFullName()).c_str());
@@ -321,7 +329,7 @@ void EtherMACBase::registerInterface()
     IInterfaceTable *ift = InterfaceTableAccess().getIfExists();
 
     if (ift)
-        ift->addInterface(interfaceEntry, this);
+        ift->addInterface(interfaceEntry);
 }
 
 void EtherMACBase::receiveSignal(cComponent *src, simsignal_t signalId, cObject *obj)
@@ -443,7 +451,12 @@ void EtherMACBase::readChannelParameters(bool errorWhenAsymmetric)
 {
     cChannel *outTrChannel = physOutGate->findTransmissionChannel();
     cChannel *inTrChannel = physInGate->findIncomingTransmissionChannel();
-    connected = (outTrChannel != NULL) && (inTrChannel != NULL);
+
+    connected = physOutGate->getPathEndGate()->isConnected() && physInGate->getPathStartGate()->isConnected();
+
+    if (connected && ((!outTrChannel) || (!inTrChannel)))
+        throw cRuntimeError("Ethernet phys gate must be connected using a transmission channel");
+
     double txRate = outTrChannel ? outTrChannel->getNominalDatarate() : 0.0;
     double rxRate = inTrChannel ? inTrChannel->getNominalDatarate() : 0.0;
 

@@ -1,3 +1,7 @@
+2012-08-07  ------ inet-2.0.0 released ------
+
+2012-06-25  ------ inet-1.99.5 released ------
+
 2012-03-20  ------ inet-1.99.4 released ------
 
 2012-02-24  ------ inet-1.99.3 released ------
@@ -8,12 +12,12 @@
 
 2012-01-19  Andras Varga
 
-	Follow IPv4Route change: "host" in IPv4Route was renamed to 
+	Follow IPv4Route change: "host" in IPv4Route was renamed to
 	"destination"
 
 2012-01-19  Zoltan Bojthe
 
-	Follow RoutingTable change: returned IPv4Route pointers are no longer 
+	Follow RoutingTable change: returned IPv4Route pointers are no longer
 	const
 
 2012-01-20  Andras Varga
@@ -24,7 +28,7 @@
 
 	Moved DSDV-related fields/functions from RoutingTable to DSDV_2.
 
-	DSDV route expiry is now implemented with a new isValid() method on 
+	DSDV route expiry is now implemented with a new isValid() method on
 	IPv4Route; RoutingTable will ignore invalid routes (isValid()==false).
 
 	Details:
