@@ -48,6 +48,22 @@ extern int unidir_hack, optimized_hellos, llfeedback;
 #endif
 
 
+
+
+void (*recordRReplyStatsCallBack) (double stat);
+
+void setRecordRReplyStatsCallBack(void (*_recordRReplyStatsCallBack) (double stat))
+{
+    recordRReplyStatsCallBack = _recordRReplyStatsCallBack;
+}
+
+
+
+
+
+
+
+
 RREP *NS_CLASS rrep_create(u_int8_t flags,
                            u_int8_t prefix,
                            u_int8_t hcnt,
@@ -198,11 +214,13 @@ void NS_CLASS rrep_send(RREP * rrep, rt_table_t * rev_rt,
         else
             omnet_chg_rte(rev_rt->next_hop,rev_rt->next_hop, nm, 1,false,DEV_NR(rev_rt->ifindex).ipaddr);
     }
+    double currentTime = simTime().dbl();
     totalRrepSend++;
 #endif
     rrep->ttl=MAXTTL;
     aodv_socket_send((AODV_msg *) rrep, rev_rt->next_hop, size, 1,
                      &DEV_IFINDEX(rev_rt->ifindex));
+    recordRReplyStatsCallBack(1.0);
 
     /* Update precursor lists */
     if (fwd_rt)
@@ -269,10 +287,12 @@ void NS_CLASS rrep_forward(RREP * rrep, int size, rt_table_t * rev_rt,
     RREP * rrep_new = check_and_cast <RREP *> (rrep->dup());
     rrep_new->hcnt = fwd_rt->hcnt;
     rrep_new->hopfix = fwd_rt->hopfix;
+    double currentTime = simTime().dbl();
     totalRrepSend++;
     rrep_new->ttl=ttl;
     aodv_socket_send((AODV_msg *) rrep_new, rev_rt->next_hop, size, 1,
                      &DEV_IFINDEX(rev_rt->ifindex));
+    recordRReplyStatsCallBack(1.0);
 #endif
     precursor_add(fwd_rt, rev_rt->next_hop);
     precursor_add(rev_rt, fwd_rt->next_hop);

@@ -25,6 +25,11 @@
 
 #include <sys/types.h>
 
+
+extern void (*recordRReplyStatsCallBack) (double stat);
+extern void (*recordRREQStatsCallBack) (double stat);
+
+
 #ifdef NS_PORT
 #ifndef OMNETPP
 #include "ns/aodv-uu.h"
@@ -264,10 +269,12 @@ void NS_CLASS aodv_socket_process_packet(AODV_msg * aodv_msg, int len,
 
     case AODV_RREQ:
         rreq_process((RREQ *) aodv_msg, len, src, dst, ttl, ifindex);
+        recordRREQStatsCallBack(1.0); //also record receipts not just sends
         break;
     case AODV_RREP:
         DEBUG(LOG_DEBUG, 0, "Received RREP");
         rrep_process((RREP *) aodv_msg, len, src, dst, ttl, ifindex);
+        recordRReplyStatsCallBack(1.0); //also record receipts not just sends
         break;
     case AODV_RERR:
         DEBUG(LOG_DEBUG, 0, "Received RERR");

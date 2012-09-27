@@ -66,6 +66,19 @@ extern int rreq_gratuitous, expanding_ring_search;
 extern int internet_gw_mode;
 #endif
 
+
+
+void (*recordRREQStatsCallBack) (double stat);
+
+
+
+void setRecordRREQStatsCallBack(void (*_recordRREQStatsCallBack) (double stat))
+{
+    recordRREQStatsCallBack = _recordRREQStatsCallBack;
+}
+
+
+
 RREQ *NS_CLASS rreq_create(u_int8_t flags,struct in_addr dest_addr,
                            u_int32_t dest_seqno, struct in_addr orig_addr)
 {
@@ -151,11 +164,30 @@ void NS_CLASS rreq_send(struct in_addr dest_addr, u_int32_t dest_seqno,
             continue;
         rreq = rreq_create(flags, dest_addr, dest_seqno, DEV_NR(i).ipaddr);
 
+        IPv4Address ipv4Here(DEV_NR(i).ipaddr.s_addr.toUint());
+        uint32 v1 = DEV_NR(i).ipaddr.s_addr.toUint();
+        std::cout << "#############  " << v1 << std::endl;
+
+        IPv4Address ipv4Dest(dest_addr.s_addr.toUint());
+        uint32 v2 = dest_addr.s_addr.toUint();
+        std::cout << "#############  " << v2 << std::endl;
+
+        std::cout << "Time: " << simTime().dbl() << ", Loc: " << ipv4Here <<
+                ", RREQ for: " << ipv4Dest << std::endl;
+        std::cout << "Time: " << simTime().dbl() << ", Loc: " << DEV_NR(i).ipaddr.s_addr <<
+                ", RREQ for: " << dest_addr.s_addr << std::endl;
+
+        if ( dest_addr.s_addr.toUint() == 2448162823 )
+        {
+            std::cout << "#############  " << dest_addr.s_addr << std::endl;
+        }
+
 
 #ifdef OMNETPP
         rreq->ttl = ttl;
         aodv_socket_send((AODV_msg *) rreq, dest, RREQ_SIZE, 1, &DEV_NR(i),delay);
         totalRreqSend++;
+        recordRREQStatsCallBack(1.0);
 #else
         aodv_socket_send((AODV_msg *) rreq, dest, RREQ_SIZE, 1, &DEV_NR(i));
 #endif
@@ -204,6 +236,7 @@ void NS_CLASS rreq_forward(RREQ * rreq, int size, int ttl)
         RREQ * rreq_new = check_and_cast <RREQ*>(rreq->dup());
         rreq_new->ttl=ttl;
         aodv_socket_send((AODV_msg *) rreq_new, dest, size, ttl, &DEV_NR(i),delay);
+        recordRREQStatsCallBack(1.0);
 #endif
     }
 }

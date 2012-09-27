@@ -31,7 +31,17 @@ class ICMPv6;
 class UDPPacket;
 class InterfaceEntry;
 
-const int UDP_HEADER_BYTES = 8;
+//const int UDP_HEADER_BYTES = 8;
+
+/*
+ * It is convenient for me to use the pre-prepared AODV
+ * network configuration which sends out UDP/IP packets
+ * over CSMA802154, but I want to compare but rate efficiency
+ * in like for like and my own protocol does not use UDP or IP
+ * So easiest solution is to leave the headers but remove the
+ * simulation record of their size
+ */
+const int UDP_HEADER_BYTES = 0;
 
 const bool DEFAULT_MULTICAST_LOOP = true;
 

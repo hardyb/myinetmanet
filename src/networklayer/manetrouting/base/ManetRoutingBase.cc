@@ -36,7 +36,21 @@
 #include "IMobility.h"
 #include "Ieee80211MgmtAP.h"
 #define IP_DEF_TTL 32
-#define UDP_HDR_LEN 8
+
+//#define UDP_HDR_LEN 8
+/*
+ * It is convenient for me to use the pre-prepared AODV
+ * network configuration which sends out UDP/IP packets
+ * over CSMA802154, but I want to compare but rate efficiency
+ * in like for like and my own protocol does not use UDP or IP
+ * So easiest solution is to leave the headers but remove the
+ * simulation record of their size
+ */
+#define UDP_HDR_LEN 0
+
+
+
+
 
 simsignal_t ManetRoutingBase::mobilityStateChangedSignal = SIMSIGNAL_NULL;
 ManetRoutingBase::GlobalRouteMap *ManetRoutingBase::globalRouteMap = NULL;

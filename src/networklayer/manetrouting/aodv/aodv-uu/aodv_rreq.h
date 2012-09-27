@@ -92,6 +92,8 @@ struct blacklist
 };
 #endif              /* NS_NO_GLOBALS */
 
+
+
 #ifndef NS_NO_DECLARATIONS
 RREQ *rreq_create(u_int8_t flags, struct in_addr dest_addr,
                   u_int32_t dest_seqno, struct in_addr orig_addr);

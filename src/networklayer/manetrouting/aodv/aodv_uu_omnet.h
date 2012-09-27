@@ -109,6 +109,9 @@ class AODVUU;
 #undef ntohs
 #define ntohs(x) x
 
+void setRecordRREQStatsCallBack(void (*_recordRREQStatsCallBack) (double stat));
+void setRecordRReplyStatsCallBack(void (*_recordRReplyStatsCallBack) (double stat));
+void setRecordDataStatsCallBack(void (*_recordDataStatsCallBack) (double stat));
 
 
 /* The AODV-UU routing agent class */

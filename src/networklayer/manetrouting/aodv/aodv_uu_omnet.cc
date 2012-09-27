@@ -42,7 +42,20 @@
 #include "Ieee802Ctrl_m.h"
 
 
-const int UDP_HEADER_BYTES = 8;
+//const int UDP_HEADER_BYTES = 8;
+/*
+ * It is convenient for me to use the pre-prepared AODV
+ * network configuration which sends out UDP/IP packets
+ * over CSMA802154, but I want to compare but rate efficiency
+ * in like for like and my own protocol does not use UDP or IP
+ * So easiest solution is to leave the headers but remove the
+ * simulation record of their size
+ */
+const int UDP_HEADER_BYTES = 0;
+
+
+
+
 typedef std::vector<IPv4Address> IPAddressVector;
 
 Define_Module(AODVUU);
@@ -65,6 +78,21 @@ int AODVUU::totalRerrSend=0;
 int AODVUU::totalRerrRec=0;
 #endif
 
+
+
+
+void (*recordDataStatsCallBack) (double stat);
+
+
+
+void setRecordDataStatsCallBack(void (*_recordDataStatsCallBack) (double stat))
+{
+    recordDataStatsCallBack = _recordDataStatsCallBack;
+}
+
+
+
+
 void NS_CLASS initialize(int stage)
 {
      /*
@@ -76,6 +104,10 @@ void NS_CLASS initialize(int stage)
      */
     if (stage==4)
     {
+
+        //cSimulation* sim =  cSimulation::getActiveSimulation();
+        //mNetMan = check_and_cast<DataCentricNetworkMan*>(sim->getModuleByPath("csma802154net.dataCentricNetworkMan"));
+
 #ifndef AODV_GLOBAL_STATISTISTIC
         iswrite = false;
         totalSend=0;
@@ -981,6 +1013,7 @@ route_discovery:
     {
         /* DEBUG(LOG_DEBUG, 0, "Sending pkt uid=%d", ch->uid()); */
         send(p,"to_ip");
+        //recordDataStatsCallBack(1.0);
         /* When forwarding data, make sure we are sending HELLO messages */
         gettimeofday(&this_host.fwd_time, NULL);
 
