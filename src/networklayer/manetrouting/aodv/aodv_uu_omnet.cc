@@ -120,6 +120,7 @@ void NS_CLASS initialize(int stage)
         totalRerrSend=0;
         totalRerrRec=0;
 #endif
+        suppress_rreps_on_proactive_rreqs = 0;
         log_to_file = 0;
         hello_jittering = 0;
         optimized_hellos = 0;
@@ -129,6 +130,9 @@ void NS_CLASS initialize(int stage)
         rreq_gratuitous =0;
 
         //sendMessageEvent = new cMessage();
+
+        if ((bool)par("suppress_rreps_on_proactive_rreqs"))
+            suppress_rreps_on_proactive_rreqs = 1;
 
         if ((bool)par("log_to_file"))
             log_to_file = 1;
@@ -166,7 +170,7 @@ void NS_CLASS initialize(int stage)
 
         if (llfeedback)
         {
-            active_route_timeout = ACTIVE_ROUTE_TIMEOUT_LLF;
+            active_route_timeout = ACTIVE_ROUTE_TIMEOUT; // previously ACTIVE_ROUTE_TIMEOUT_LLF
             ttl_start = TTL_START_LLF;
             delete_period =  DELETE_PERIOD_LLF;
         }
@@ -268,7 +272,9 @@ void NS_CLASS initialize(int stage)
         if (isRoot)
         {
             timer_init(&proactive_rreq_timer,&NS_CLASS rreq_proactive, NULL);
-            timer_set_timeout(&proactive_rreq_timer, proactive_rreq_timeout);
+            //timer_set_timeout(&proactive_rreq_timer, proactive_rreq_timeout);
+            // We want the very first proactive route request to occur at 1s
+            timer_set_timeout(&proactive_rreq_timer, 1000);
         }
 
         propagateProactive = par("propagateProactive");
@@ -419,6 +425,7 @@ void NS_CLASS packetFailed(IPv4Datagram *dgram)
         //  /* Mark the route to be repaired */
         rt_next_hop->flags |= RT_REPAIR;
         neighbor_link_break(rt_next_hop);
+        std::cout << "T=" << simTime().dbl() << " About to local repair name: " << dgram->getName() << " orig: " << ip_to_str(src_addr) << " dest: " << ip_to_str(dest_addr) << std:: endl;
         rreq_local_repair(rt, src_addr, NULL);
     }
     else

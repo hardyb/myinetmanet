@@ -59,6 +59,12 @@ void setRecordRReplyStatsCallBack(void (*_recordRReplyStatsCallBack) (double sta
 
 
 
+void (*recordRReplyCompletionCallBack) (uint32 _originator, uint32 _destination);
+
+void setRecordRReplyCompletionCallBack(void (*_recordRReplyCompletionCallBack) (uint32 _originator, uint32 _destination))
+{
+    recordRReplyCompletionCallBack = _recordRReplyCompletionCallBack;
+}
 
 
 
@@ -492,6 +498,16 @@ void NS_CLASS rrep_process(RREP * rrep, int rreplen, struct in_addr ip_src,
     if (isLocalAddress (rrep_orig.s_addr))
     {
 #endif
+        // I think rreply has reached the originator of the rreq
+
+        //IPv4Address ipv4Here(DEV_NR(i).ipaddr.s_addr.toUint());
+        //IPv4Address ipv4Dest(dest_addr.s_addr.toUint());
+
+        IPv4Address ipv4Here(rrep_orig.s_addr.toUint());
+        IPv4Address ipv4Dest(rrep_dest.s_addr.toUint());
+        recordRReplyCompletionCallBack(ipv4Here.getInt(), ipv4Dest.getInt());
+
+        ipv4Here.getInt();
 
 #ifdef CONFIG_GATEWAY
         if (inet_rrep)

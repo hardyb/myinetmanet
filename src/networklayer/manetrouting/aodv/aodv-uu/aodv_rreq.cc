@@ -68,6 +68,7 @@ extern int internet_gw_mode;
 
 
 
+
 void (*recordRREQStatsCallBack) (double stat);
 
 
@@ -76,6 +77,22 @@ void setRecordRREQStatsCallBack(void (*_recordRREQStatsCallBack) (double stat))
 {
     recordRREQStatsCallBack = _recordRREQStatsCallBack;
 }
+
+void (*recordRREQInitiationCallBack) (uint32 _originator, uint32 _destination);
+
+
+
+void setRecordRREQInitiationCallBack(void (*_recordRREQInitiationCallBack) (uint32 _originator, uint32 _destination))
+{
+    recordRREQInitiationCallBack = _recordRREQInitiationCallBack;
+}
+
+
+
+
+
+
+
 
 
 
@@ -165,22 +182,25 @@ void NS_CLASS rreq_send(struct in_addr dest_addr, u_int32_t dest_seqno,
         rreq = rreq_create(flags, dest_addr, dest_seqno, DEV_NR(i).ipaddr);
 
         IPv4Address ipv4Here(DEV_NR(i).ipaddr.s_addr.toUint());
-        uint32 v1 = DEV_NR(i).ipaddr.s_addr.toUint();
-        std::cout << "#############  " << v1 << std::endl;
+        //uint32 v1 = DEV_NR(i).ipaddr.s_addr.toUint();
+        //std::cout << "#############  " << v1 << std::endl;
 
         IPv4Address ipv4Dest(dest_addr.s_addr.toUint());
-        uint32 v2 = dest_addr.s_addr.toUint();
-        std::cout << "#############  " << v2 << std::endl;
+        //uint32 v2 = dest_addr.s_addr.toUint();
+        //std::cout << "#############  " << v2 << std::endl;
 
         std::cout << "Time: " << simTime().dbl() << ", Loc: " << ipv4Here <<
                 ", RREQ for: " << ipv4Dest << std::endl;
-        std::cout << "Time: " << simTime().dbl() << ", Loc: " << DEV_NR(i).ipaddr.s_addr <<
-                ", RREQ for: " << dest_addr.s_addr << std::endl;
 
-        if ( dest_addr.s_addr.toUint() == 2448162823 )
-        {
-            std::cout << "#############  " << dest_addr.s_addr << std::endl;
-        }
+        recordRREQInitiationCallBack(ipv4Here.getInt(), ipv4Dest.getInt());
+
+        //std::cout << "Time: " << simTime().dbl() << ", Loc: " << DEV_NR(i).ipaddr.s_addr <<
+        //        ", RREQ for: " << dest_addr.s_addr << std::endl;
+
+        //if ( dest_addr.s_addr.toUint() == 2448162823 )
+        //{
+        //    std::cout << "#############  " << dest_addr.s_addr << std::endl;
+        //}
 
 
 #ifdef OMNETPP
@@ -327,7 +347,15 @@ void NS_CLASS rreq_process(RREQ * rreq, int rreqlen, struct in_addr ip_src,
     /* Ignore already processed RREQs. */
     if (rreq_record_find(rreq_orig, rreq_id))
     {
-        life = PATH_DISCOVERY_TIME - 2 * rreq_new_hcnt * NODE_TRAVERSAL_TIME;
+        if ( isBroadcast(rreq_dest.s_addr) && rreq->d && propagateProactive )
+        {
+            life = ACTIVE_ROUTE_TIMEOUT;
+        }
+        else
+        {
+            life = PATH_DISCOVERY_TIME - 2 * rreq_new_hcnt * NODE_TRAVERSAL_TIME;
+        }
+
 #ifdef OMNETPP
         if (isBroadcast(rreq_dest.s_addr))
         {
@@ -363,7 +391,14 @@ void NS_CLASS rreq_process(RREQ * rreq, int rreqlen, struct in_addr ip_src,
                     (rreq_orig_seqno == rev_rt->dest_seqno &&
                      (rev_rt->state == INVALID || cost < rev_rt->cost))))
             {
-                life = PATH_DISCOVERY_TIME - 2 * rreq_new_hcnt * NODE_TRAVERSAL_TIME;
+                if ( isBroadcast(rreq_dest.s_addr) && rreq->d && propagateProactive )
+                {
+                    life = ACTIVE_ROUTE_TIMEOUT;
+                }
+                else
+                {
+                    life = PATH_DISCOVERY_TIME - 2 * rreq_new_hcnt * NODE_TRAVERSAL_TIME;
+                }
                 rev_rt = rt_table_update(rev_rt, ip_src, rreq_new_hcnt,
                                          rreq_orig_seqno, life, VALID,
                                          rev_rt->flags,ifindex,cost,hopfix);
@@ -375,6 +410,10 @@ void NS_CLASS rreq_process(RREQ * rreq, int rreqlen, struct in_addr ip_src,
     /* Now buffer this RREQ so that we don't process a similar RREQ we
        get within PATH_DISCOVERY_TIME. */
     rreq_record_insert(rreq_orig, rreq_id);
+    static int numRoutes = 0;
+    numRoutes++;
+    std::cout << "#### " << getFullPath() << " #### ROUTE ADDED #########:  " << numRoutes << std::endl;
+
 
     /* Determine whether there are any RREQ extensions */
 
@@ -411,7 +450,14 @@ void NS_CLASS rreq_process(RREQ * rreq, int rreqlen, struct in_addr ip_src,
     rev_rt = rt_table_find(rreq_orig);
 
     /* Calculate the extended minimal life time. */
-    life = PATH_DISCOVERY_TIME - 2 * rreq_new_hcnt * NODE_TRAVERSAL_TIME;
+    if ( isBroadcast(rreq_dest.s_addr) && rreq->d && propagateProactive )
+    {
+        life = ACTIVE_ROUTE_TIMEOUT;
+    }
+    else
+    {
+        life = PATH_DISCOVERY_TIME - 2 * rreq_new_hcnt * NODE_TRAVERSAL_TIME;
+    }
 
     if (rev_rt == NULL)
     {
@@ -565,13 +611,17 @@ void NS_CLASS rreq_process(RREQ * rreq, int rreqlen, struct in_addr ip_src,
         if (!propagateProactive)
             return;
 
-        /* WE are the RREQ DESTINATION. Update the node's own
-           sequence number to the maximum of the current seqno and the
-           one in the RREQ. */
-        seqno_incr(this_host.seqno);
-        rrep = rrep_create(0, 0, 0, DEV_IFINDEX(rev_rt->ifindex).ipaddr,this_host.seqno, rev_rt->dest_addr, MY_ROUTE_TIMEOUT);
-        EV << " create a rrep" << ip_to_str(DEV_IFINDEX(rev_rt->ifindex).ipaddr) << "seq n" << this_host.seqno << " to " << ip_to_str(rev_rt->dest_addr);
-        rrep_send(rrep, rev_rt, NULL, RREP_SIZE);
+        if ( !suppress_rreps_on_proactive_rreqs )
+        {
+            /* WE are the RREQ DESTINATION. Update the node's own
+               sequence number to the maximum of the current seqno and the
+               one in the RREQ. */
+            seqno_incr(this_host.seqno);
+            rrep = rrep_create(0, 0, 0, DEV_IFINDEX(rev_rt->ifindex).ipaddr,this_host.seqno, rev_rt->dest_addr, MY_ROUTE_TIMEOUT);
+            EV << " create a rrep" << ip_to_str(DEV_IFINDEX(rev_rt->ifindex).ipaddr) << "seq n" << this_host.seqno << " to " << ip_to_str(rev_rt->dest_addr);
+            rrep_send(rrep, rev_rt, NULL, RREP_SIZE);
+        }
+
         if (ip_ttl > 0)
         {
             rreq_forward(rreq, rreqlen, ip_ttl); // the ttl is decremented for ip layer

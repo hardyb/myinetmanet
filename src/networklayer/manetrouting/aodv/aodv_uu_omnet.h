@@ -111,6 +111,13 @@ class AODVUU;
 
 void setRecordRREQStatsCallBack(void (*_recordRREQStatsCallBack) (double stat));
 void setRecordRReplyStatsCallBack(void (*_recordRReplyStatsCallBack) (double stat));
+void setRecordRReplyCompletionCallBack(void (*_recordRReplyCompletionCallBack) (uint32 _originator, uint32 _destination));
+void setRecordRREQInitiationCallBack(void (*_recordRREQInitiationCallBack) (uint32 _originator, uint32 _destination));
+
+
+
+
+
 void setRecordDataStatsCallBack(void (*_recordDataStatsCallBack) (double stat));
 
 
@@ -242,6 +249,7 @@ class AODVUU : public ManetRoutingBase
 #undef NS_NO_GLOBALS
 
     /* (Previously global) variables from main.c */
+    int suppress_rreps_on_proactive_rreqs;
     int log_to_file;
     int rt_log_interval;
     int unidir_hack;

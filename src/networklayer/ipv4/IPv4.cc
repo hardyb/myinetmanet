@@ -33,6 +33,14 @@
 #include "UDPPacket_m.h"
 #include "TCPSegment.h"
 
+// TEMP
+#include "aodv_msg_struct.h"
+#define AODV_RREQ     1
+#define AODV_RREP     2
+#define AODV_RERR     3
+#define AODV_RREP_ACK 4
+
+
 Define_Module(IPv4);
 
 extern void (*recordDataStatsCallBack) (double stat);
@@ -508,6 +516,7 @@ void IPv4::routeUnicastPacket(IPv4Datagram *datagram, InterfaceEntry *destIE, IP
     else // fragment and send
     {
         EV << "output interface is " << destIE->getName() << ", next-hop address: " << nextHopAddr << "\n";
+        std::cout << "T=" << simTime().dbl() << " Routing unicast pkt name: " << datagram->getName() << " orig: " << datagram->getSrcAddress() << " dest: " << datagram->getDestAddress() << " via: " << nextHopAddr << std::endl;
         numForwarded++;
         fragmentAndSend(datagram, destIE, nextHopAddr);
         // HERE
@@ -1069,6 +1078,33 @@ void IPv4::reassembleAndDeliver(IPv4Datagram *datagram)
 
         if (gate("transportOut", gateindex)->isPathOK())
         {
+            if ( dynamic_cast<UDPPacket*>(datagram->getEncapsulatedPacket()) )
+            {
+                UDPPacket* udpPacket = check_and_cast<UDPPacket*>(datagram->getEncapsulatedPacket());
+                cMessage* msg_aux  = udpPacket->getEncapsulatedPacket();
+                if (  true ) // dynamic_cast<AODV_msg*>(msg_aux)   )
+                {
+                    AODV_msg* aodvMsg = check_and_cast<AODV_msg*>(msg_aux);
+                    switch (aodvMsg->type)
+                    {
+                        case AODV_RREQ:
+                            std::cout << "sending RREQ to transportOut " << gateindex << endl;
+                            break;
+                        case AODV_RREP:
+                            std::cout << "sending RREP to transportOut " << gateindex << endl;
+                            break;
+                        case AODV_RERR:
+                            std::cout << "sending RERR to transportOut " << gateindex << endl;
+                            break;
+                        case AODV_RREP_ACK:
+                            std::cout << "sending RREP_ACK to transportOut " << gateindex << endl;
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+
             send(decapsulate(datagram), "transportOut", gateindex);
             numLocalDeliver++;
         }
