@@ -182,17 +182,15 @@ void NS_CLASS rreq_send(struct in_addr dest_addr, u_int32_t dest_seqno,
         rreq = rreq_create(flags, dest_addr, dest_seqno, DEV_NR(i).ipaddr);
 
         IPv4Address ipv4Here(DEV_NR(i).ipaddr.s_addr.toUint());
-        //uint32 v1 = DEV_NR(i).ipaddr.s_addr.toUint();
-        //std::cout << "#############  " << v1 << std::endl;
-
         IPv4Address ipv4Dest(dest_addr.s_addr.toUint());
-        //uint32 v2 = dest_addr.s_addr.toUint();
-        //std::cout << "#############  " << v2 << std::endl;
 
         std::cout << "Time: " << simTime().dbl() << ", Loc: " << ipv4Here <<
                 ", RREQ for: " << ipv4Dest << std::endl;
 
-        recordRREQInitiationCallBack(ipv4Here.getInt(), ipv4Dest.getInt());
+        if ( !isBroadcast(dest_addr.s_addr) )
+        {
+            recordRREQInitiationCallBack(ipv4Here.getInt(), ipv4Dest.getInt());
+        }
 
         //std::cout << "Time: " << simTime().dbl() << ", Loc: " << DEV_NR(i).ipaddr.s_addr <<
         //        ", RREQ for: " << dest_addr.s_addr << std::endl;
