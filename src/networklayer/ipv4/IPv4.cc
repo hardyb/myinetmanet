@@ -1082,7 +1082,7 @@ void IPv4::reassembleAndDeliver(IPv4Datagram *datagram)
             {
                 UDPPacket* udpPacket = check_and_cast<UDPPacket*>(datagram->getEncapsulatedPacket());
                 cMessage* msg_aux  = udpPacket->getEncapsulatedPacket();
-                if (  true ) // dynamic_cast<AODV_msg*>(msg_aux)   )
+                if (  dynamic_cast<AODV_msg*>(msg_aux)   )
                 {
                     AODV_msg* aodvMsg = check_and_cast<AODV_msg*>(msg_aux);
                     switch (aodvMsg->type)

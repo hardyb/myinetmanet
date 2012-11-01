@@ -168,18 +168,18 @@ void NS_CLASS initialize(int stage)
         internet_gw_mode = (int) par("internet_gw_mode");
         gateWayAddress = new IPv4Address(par("internet_gw_address").stringValue());
 
-        if (llfeedback)
-        {
-            active_route_timeout = ACTIVE_ROUTE_TIMEOUT; // previously ACTIVE_ROUTE_TIMEOUT_LLF
-            ttl_start = TTL_START_LLF;
-            delete_period =  DELETE_PERIOD_LLF;
-        }
-        else
-        {
+        //if (llfeedback)
+        //{
+        //    active_route_timeout = (int) par("active_timeout"); // previously ACTIVE_ROUTE_TIMEOUT_LLF
+        //    ttl_start = TTL_START_LLF;
+        //    delete_period =  DELETE_PERIOD_LLF;
+        //}
+        //else
+        //{
             active_route_timeout = (int) par("active_timeout");// ACTIVE_ROUTE_TIMEOUT_HELLO;
             ttl_start = TTL_START_HELLO;
             delete_period = DELETE_PERIOD_HELLO;
-        }
+        //}
 
         /* Initialize common manet routing protocol structures */
         registerRoutingModule();
@@ -1063,6 +1063,34 @@ void NS_CLASS processLinkBreak(const cPolymorphic *details)
         if (dynamic_cast<IPv4Datagram *>(const_cast<cPolymorphic*> (details)))
         {
             dgram = check_and_cast<IPv4Datagram *>(details);
+
+            if ( dynamic_cast<UDPPacket*>(dgram->getEncapsulatedPacket()) )
+            {
+                UDPPacket* udpPacket = check_and_cast<UDPPacket*>(dgram->getEncapsulatedPacket());
+                cMessage* msg_aux  = udpPacket->getEncapsulatedPacket();
+                if (  dynamic_cast<AODV_msg*>(msg_aux)   )
+                {
+                    AODV_msg* aodvMsg = check_and_cast<AODV_msg*>(msg_aux);
+                    switch (aodvMsg->type)
+                    {
+                        case AODV_RREQ:
+                            std::cout << "Processing line break for a RREQ" << endl;
+                            break;
+                        case AODV_RREP:
+                            std::cout << "Processing line break for a RREP" << endl;
+                            break;
+                        case AODV_RERR:
+                            std::cout << "Processing line break for a RERR" << endl;
+                            break;
+                        case AODV_RREP_ACK:
+                            std::cout << "Processing line break for a RREP_ACK" << endl;
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+
             packetFailed(dgram);
             return;
         }
