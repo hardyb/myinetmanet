@@ -40,6 +40,14 @@
 #include "params.h"
 #endif
 
+
+
+#define RERR_STAT 18
+
+
+extern void (*recordDataStatsCallBack) (unsigned char type, double stat);
+
+
 RERR *NS_CLASS rerr_create(u_int8_t flags,struct in_addr dest_addr,
                            u_int32_t dest_seqno)
 
@@ -246,10 +254,13 @@ void NS_CLASS rerr_process(RERR * rerr, int rerrlen,struct in_addr ip_src,
         new_rerr->ttl=1;
 
         if (rt && new_rerr->dest_count == 1 && rerr_unicast_dest.s_addr!=0)
+        {
+            recordDataStatsCallBack(RERR_STAT, 1.0);
             aodv_socket_send((AODV_msg *) new_rerr,
                              rerr_unicast_dest,
                              RERR_CALC_SIZE(new_rerr), 1,
                              &DEV_IFINDEX(rt->ifindex));
+        }
 
         else if (new_rerr->dest_count > 0)
         {
@@ -273,11 +284,15 @@ void NS_CLASS rerr_process(RERR * rerr, int rerrlen,struct in_addr ip_src,
 #ifdef OMNETPP
                 if (numInterfaces>1)
                 {
+                    recordDataStatsCallBack(RERR_STAT, 1.0);
                     aodv_socket_send((AODV_msg *) new_rerr->dup(), dest,RERR_CALC_SIZE(new_rerr), 1, &DEV_NR(i));
                 }
                 else
+                { // Need to improve location of { but no issue while OMNET
 #endif
+                    recordDataStatsCallBack(RERR_STAT, 1.0);
                     aodv_socket_send((AODV_msg *) new_rerr, dest,RERR_CALC_SIZE(new_rerr), 1, &DEV_NR(i));
+                }
                 numInterfaces--;
             }
 

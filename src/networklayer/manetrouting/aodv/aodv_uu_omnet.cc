@@ -42,6 +42,11 @@
 #include "Ieee802Ctrl_m.h"
 
 
+
+// needs to go in a single header somewhere
+#define AODV_DATA_LINEBREAK 17
+
+
 //const int UDP_HEADER_BYTES = 8;
 /*
  * It is convenient for me to use the pre-prepared AODV
@@ -81,11 +86,11 @@ int AODVUU::totalRerrRec=0;
 
 
 
-void (*recordDataStatsCallBack) (double stat);
+void (*recordDataStatsCallBack) (unsigned char type, double stat);
 
 
 
-void setRecordDataStatsCallBack(void (*_recordDataStatsCallBack) (double stat))
+void setRecordDataStatsCallBack(void (*_recordDataStatsCallBack) (unsigned char type, double stat))
 {
     recordDataStatsCallBack = _recordDataStatsCallBack;
 }
@@ -369,6 +374,8 @@ void NS_CLASS packetFailed(IPv4Datagram *dgram)
 {
     rt_table_t *rt_next_hop, *rt;
     struct in_addr dest_addr, src_addr, next_hop;
+
+    recordDataStatsCallBack(AODV_DATA_LINEBREAK, 1.0);
 
     src_addr.s_addr = dgram->getSrcAddress().getInt();
     dest_addr.s_addr = dgram->getDestAddress().getInt();
@@ -1075,19 +1082,28 @@ void NS_CLASS processLinkBreak(const cPolymorphic *details)
                     {
                         case AODV_RREQ:
                             std::cout << "Processing line break for a RREQ" << endl;
+                            return;
                             break;
                         case AODV_RREP:
                             std::cout << "Processing line break for a RREP" << endl;
+                            return;
                             break;
                         case AODV_RERR:
                             std::cout << "Processing line break for a RERR" << endl;
+                            return;
                             break;
                         case AODV_RREP_ACK:
                             std::cout << "Processing line break for a RREP_ACK" << endl;
+                            return;
                             break;
                         default:
+                            return;
                             break;
                     }
+                }
+                else
+                {
+                    std::cout << "Processing line break for a Non-AODV Ctrl pkt (ie data)" << endl;
                 }
             }
 

@@ -118,7 +118,7 @@ void setRecordRREQInitiationCallBack(void (*_recordRREQInitiationCallBack) (uint
 
 
 
-void setRecordDataStatsCallBack(void (*_recordDataStatsCallBack) (double stat));
+void setRecordDataStatsCallBack(void (*_recordDataStatsCallBack) (unsigned char type, double stat));
 
 
 /* The AODV-UU routing agent class */

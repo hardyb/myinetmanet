@@ -41,9 +41,14 @@
 #define AODV_RREP_ACK 4
 
 
+
+
+// needs to go in a single header somewhere
+#define AODV_DATA_STAT 16
+
 Define_Module(IPv4);
 
-extern void (*recordDataStatsCallBack) (double stat);
+extern void (*recordDataStatsCallBack) (unsigned char type, double stat);
 
 #define NEWFRAGMENT
 
@@ -520,7 +525,7 @@ void IPv4::routeUnicastPacket(IPv4Datagram *datagram, InterfaceEntry *destIE, IP
         numForwarded++;
         fragmentAndSend(datagram, destIE, nextHopAddr);
         // HERE
-        recordDataStatsCallBack(1.0);
+        recordDataStatsCallBack(AODV_DATA_STAT, 1.0);
     }
 }
 
