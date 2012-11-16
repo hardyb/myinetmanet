@@ -45,6 +45,7 @@
 
 // needs to go in a single header somewhere
 #define AODV_DATA_LINEBREAK 17
+#define AODV_ALL_LINEBREAK 19
 
 
 //const int UDP_HEADER_BYTES = 8;
@@ -375,6 +376,7 @@ void NS_CLASS packetFailed(IPv4Datagram *dgram)
     rt_table_t *rt_next_hop, *rt;
     struct in_addr dest_addr, src_addr, next_hop;
 
+    // AODV_DATA_LINEBREAK is in this file, but should be in some kind of shared header
     recordDataStatsCallBack(AODV_DATA_LINEBREAK, 1.0);
 
     src_addr.s_addr = dgram->getSrcAddress().getInt();
@@ -1064,6 +1066,8 @@ int NS_CLASS ifindex2devindex(unsigned int ifindex)
 
 void NS_CLASS processLinkBreak(const cPolymorphic *details)
 {
+    // AODV_ALL_LINEBREAK is in this file, but should be in some kind of shared header
+    recordDataStatsCallBack(AODV_ALL_LINEBREAK, 1.0);
     IPv4Datagram  *dgram=NULL;
     if (llfeedback)
     {
