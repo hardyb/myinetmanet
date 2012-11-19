@@ -113,7 +113,7 @@ void setRecordRREQStatsCallBack(void (*_recordRREQStatsCallBack) (double stat));
 void setRecordRReplyStatsCallBack(void (*_recordRReplyStatsCallBack) (double stat));
 void setRecordRReplyCompletionCallBack(void (*_recordRReplyCompletionCallBack) (uint32 _originator, uint32 _destination));
 void setRecordRREQInitiationCallBack(void (*_recordRREQInitiationCallBack) (uint32 _originator, uint32 _destination));
-
+void setRecordProactiveRouteCallBack(void (*_recordProactiveRouteCallBack) (uint32 _originator));
 
 
 

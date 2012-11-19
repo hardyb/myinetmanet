@@ -89,6 +89,16 @@ void setRecordRREQInitiationCallBack(void (*_recordRREQInitiationCallBack) (uint
 
 
 
+void (*recordProactiveRouteCallBack) (uint32 _originator);
+
+
+
+void setRecordProactiveRouteCallBack(void (*_recordProactiveRouteCallBack) (uint32 _originator))
+{
+    recordProactiveRouteCallBack = _recordProactiveRouteCallBack;
+}
+
+
 
 
 
@@ -609,6 +619,14 @@ void NS_CLASS rreq_process(RREQ * rreq, int rreqlen, struct in_addr ip_src,
         if (!propagateProactive)
             return;
 
+        for (int i = 0; i < MAX_NR_INTERFACES; i++)
+        {
+            if (!DEV_NR(i).enabled)
+                continue;
+            IPv4Address ipv4Here(DEV_NR(i).ipaddr.s_addr.toUint());
+            recordProactiveRouteCallBack(ipv4Here.getInt());
+        }
+
         if ( !suppress_rreps_on_proactive_rreqs )
         {
             /* WE are the RREQ DESTINATION. Update the node's own
@@ -926,6 +944,16 @@ void NS_CLASS  rreq_proactive (void *arg)
     else
          dest.s_addr= IPv4Address::ALLONES_ADDRESS.getInt();
     rreq_send(dest,0,NET_DIAMETER, RREQ_DEST_ONLY);
+
+    recordProactiveRouteCallBack(0);
+    for (int i = 0; i < MAX_NR_INTERFACES; i++)
+    {
+        if (!DEV_NR(i).enabled)
+            continue;
+        IPv4Address ipv4Here(DEV_NR(i).ipaddr.s_addr.toUint());
+        recordProactiveRouteCallBack(ipv4Here.getInt());
+    }
+
     timer_set_timeout(&proactive_rreq_timer, proactive_rreq_timeout);
 }
 
