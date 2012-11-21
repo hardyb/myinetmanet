@@ -194,20 +194,20 @@ void NS_CLASS rreq_send(struct in_addr dest_addr, u_int32_t dest_seqno,
         IPv4Address ipv4Here(DEV_NR(i).ipaddr.s_addr.toUint());
         IPv4Address ipv4Dest(dest_addr.s_addr.toUint());
 
-        std::cout << "Time: " << simTime().dbl() << ", Loc: " << ipv4Here <<
-                ", RREQ for: " << ipv4Dest << std::endl;
+        COUT << "Time: " << simTime().dbl() << ", Loc: " << ipv4Here <<
+                ", RREQ for: " << ipv4Dest << "\n";
 
         if ( !isBroadcast(dest_addr.s_addr) )
         {
             recordRREQInitiationCallBack(ipv4Here.getInt(), ipv4Dest.getInt());
         }
 
-        //std::cout << "Time: " << simTime().dbl() << ", Loc: " << DEV_NR(i).ipaddr.s_addr <<
-        //        ", RREQ for: " << dest_addr.s_addr << std::endl;
+        //COUT << "Time: " << simTime().dbl() << ", Loc: " << DEV_NR(i).ipaddr.s_addr <<
+        //        ", RREQ for: " << dest_addr.s_addr << "\n";
 
         //if ( dest_addr.s_addr.toUint() == 2448162823 )
         //{
-        //    std::cout << "#############  " << dest_addr.s_addr << std::endl;
+        //    COUT << "#############  " << dest_addr.s_addr << "\n";
         //}
 
 
@@ -420,7 +420,7 @@ void NS_CLASS rreq_process(RREQ * rreq, int rreqlen, struct in_addr ip_src,
     rreq_record_insert(rreq_orig, rreq_id);
     static int numRoutes = 0;
     numRoutes++;
-    std::cout << "#### " << getFullPath() << " #### ROUTE ADDED #########:  " << numRoutes << std::endl;
+    COUT << "#### " << getFullPath() << " #### ROUTE ADDED #########:  " << numRoutes << "\n";
 
 
     /* Determine whether there are any RREQ extensions */

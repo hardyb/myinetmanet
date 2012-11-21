@@ -434,7 +434,7 @@ void NS_CLASS packetFailed(IPv4Datagram *dgram)
         //  /* Mark the route to be repaired */
         rt_next_hop->flags |= RT_REPAIR;
         neighbor_link_break(rt_next_hop);
-        std::cout << "T=" << simTime().dbl() << " About to local repair name: " << dgram->getName() << " orig: " << ip_to_str(src_addr) << " dest: " << ip_to_str(dest_addr) << std:: endl;
+        COUT << "T=" << simTime().dbl() << " About to local repair name: " << dgram->getName() << " orig: " << ip_to_str(src_addr) << " dest: " << ip_to_str(dest_addr) << "\n";
         rreq_local_repair(rt, src_addr, NULL);
     }
     else
@@ -1085,19 +1085,19 @@ void NS_CLASS processLinkBreak(const cPolymorphic *details)
                     switch (aodvMsg->type)
                     {
                         case AODV_RREQ:
-                            std::cout << "Processing line break for a RREQ" << endl;
+                            COUT << "Processing line break for a RREQ" << "\n";
                             return;
                             break;
                         case AODV_RREP:
-                            std::cout << "Processing line break for a RREP" << endl;
+                            COUT << "Processing line break for a RREP" << "\n";
                             return;
                             break;
                         case AODV_RERR:
-                            std::cout << "Processing line break for a RERR" << endl;
+                            COUT << "Processing line break for a RERR" << "\n";
                             return;
                             break;
                         case AODV_RREP_ACK:
-                            std::cout << "Processing line break for a RREP_ACK" << endl;
+                            COUT << "Processing line break for a RREP_ACK" << "\n";
                             return;
                             break;
                         default:
@@ -1107,7 +1107,7 @@ void NS_CLASS processLinkBreak(const cPolymorphic *details)
                 }
                 else
                 {
-                    std::cout << "Processing line break for a Non-AODV Ctrl pkt (ie data)" << endl;
+                    COUT << "Processing line break for a Non-AODV Ctrl pkt (ie data)" << "\n";
                 }
             }
 

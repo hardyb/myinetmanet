@@ -33,6 +33,12 @@
 #include "UDPPacket_m.h"
 #include "TCPSegment.h"
 
+
+
+#include "SpecialDebug.h"
+
+
+
 // TEMP
 #include "aodv_msg_struct.h"
 #define AODV_RREQ     1
@@ -521,7 +527,7 @@ void IPv4::routeUnicastPacket(IPv4Datagram *datagram, InterfaceEntry *destIE, IP
     else // fragment and send
     {
         EV << "output interface is " << destIE->getName() << ", next-hop address: " << nextHopAddr << "\n";
-        std::cout << "T=" << simTime().dbl() << " Routing unicast pkt name: " << datagram->getName() << " orig: " << datagram->getSrcAddress() << " dest: " << datagram->getDestAddress() << " via: " << nextHopAddr << std::endl;
+        COUT << "T=" << simTime().dbl() << " Routing unicast pkt name: " << datagram->getName() << " orig: " << datagram->getSrcAddress() << " dest: " << datagram->getDestAddress() << " via: " << nextHopAddr << "\n";
         numForwarded++;
         fragmentAndSend(datagram, destIE, nextHopAddr);
         // HERE
@@ -1093,16 +1099,16 @@ void IPv4::reassembleAndDeliver(IPv4Datagram *datagram)
                     switch (aodvMsg->type)
                     {
                         case AODV_RREQ:
-                            std::cout << "sending RREQ to transportOut " << gateindex << endl;
+                            COUT << "sending RREQ to transportOut " << gateindex << "\n";
                             break;
                         case AODV_RREP:
-                            std::cout << "sending RREP to transportOut " << gateindex << endl;
+                            COUT << "sending RREP to transportOut " << gateindex << "\n";
                             break;
                         case AODV_RERR:
-                            std::cout << "sending RERR to transportOut " << gateindex << endl;
+                            COUT << "sending RERR to transportOut " << gateindex << "\n";
                             break;
                         case AODV_RREP_ACK:
-                            std::cout << "sending RREP_ACK to transportOut " << gateindex << endl;
+                            COUT << "sending RREP_ACK to transportOut " << gateindex << "\n";
                             break;
                         default:
                             break;

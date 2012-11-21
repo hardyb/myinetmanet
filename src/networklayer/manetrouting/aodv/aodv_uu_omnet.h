@@ -97,6 +97,9 @@ class AODVUU;
 
 #include "packet_queue_omnet.h"
 
+#include "SpecialDebug.h"
+
+
 #undef NS_NO_DECLARATIONS
 
 /* In omnet we don't care about byte order */
