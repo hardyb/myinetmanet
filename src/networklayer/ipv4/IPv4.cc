@@ -39,18 +39,10 @@
 
 
 
-// TEMP
 #include "aodv_msg_struct.h"
-#define AODV_RREQ     1
-#define AODV_RREP     2
-#define AODV_RERR     3
-#define AODV_RREP_ACK 4
+#include "defs_aodv.h"
 
 
-
-
-// needs to go in a single header somewhere
-#define AODV_DATA_STAT 16
 
 Define_Module(IPv4);
 
@@ -531,7 +523,7 @@ void IPv4::routeUnicastPacket(IPv4Datagram *datagram, InterfaceEntry *destIE, IP
         numForwarded++;
         fragmentAndSend(datagram, destIE, nextHopAddr);
         // HERE
-        recordDataStatsCallBack(AODV_DATA_STAT, 1.0);
+        recordDataStatsCallBack(IPV4_DATA_STAT, 1.0);
     }
 }
 

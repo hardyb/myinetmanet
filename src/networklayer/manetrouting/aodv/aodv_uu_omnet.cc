@@ -43,9 +43,6 @@
 
 
 
-// needs to go in a single header somewhere
-#define AODV_DATA_LINEBREAK 17
-#define AODV_ALL_LINEBREAK 19
 
 
 //const int UDP_HEADER_BYTES = 8;

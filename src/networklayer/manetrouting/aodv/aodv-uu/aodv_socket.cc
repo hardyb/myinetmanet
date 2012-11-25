@@ -269,12 +269,16 @@ void NS_CLASS aodv_socket_process_packet(AODV_msg * aodv_msg, int len,
 
     case AODV_RREQ:
         rreq_process((RREQ *) aodv_msg, len, src, dst, ttl, ifindex);
-        recordRREQStatsCallBack(1.0); //also record receipts not just sends
+        // recordRREQStatsCallBack(1.0); //also record receipts not just sends
+        recordDataStatsCallBack(RREQ_STAT, 1.0);
+        // HERE
         break;
     case AODV_RREP:
         DEBUG(LOG_DEBUG, 0, "Received RREP");
         rrep_process((RREP *) aodv_msg, len, src, dst, ttl, ifindex);
-        recordRReplyStatsCallBack(1.0); //also record receipts not just sends
+        //recordRReplyStatsCallBack(1.0); //also record receipts not just sends
+        recordDataStatsCallBack(RREPLY_STAT, 1.0);
+        // HERE
         break;
     case AODV_RERR:
         DEBUG(LOG_DEBUG, 0, "Received RERR");

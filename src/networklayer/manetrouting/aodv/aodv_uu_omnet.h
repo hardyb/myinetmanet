@@ -117,11 +117,16 @@ void setRecordRReplyStatsCallBack(void (*_recordRReplyStatsCallBack) (double sta
 void setRecordRReplyCompletionCallBack(void (*_recordRReplyCompletionCallBack) (uint32 _originator, uint32 _destination));
 void setRecordRREQInitiationCallBack(void (*_recordRREQInitiationCallBack) (uint32 _originator, uint32 _destination));
 void setRecordProactiveRouteCallBack(void (*_recordProactiveRouteCallBack) (uint32 _originator));
-
-
-
-
 void setRecordDataStatsCallBack(void (*_recordDataStatsCallBack) (unsigned char type, double stat));
+
+
+#define RREQ_STAT 12
+#define RREPLY_STAT 15
+#define RERR_STAT 18
+// needs to go in a single header somewhere
+#define AODV_DATA_LINEBREAK 17
+#define AODV_ALL_LINEBREAK 19
+
 
 
 /* The AODV-UU routing agent class */

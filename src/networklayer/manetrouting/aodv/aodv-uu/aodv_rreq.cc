@@ -215,7 +215,9 @@ void NS_CLASS rreq_send(struct in_addr dest_addr, u_int32_t dest_seqno,
         rreq->ttl = ttl;
         aodv_socket_send((AODV_msg *) rreq, dest, RREQ_SIZE, 1, &DEV_NR(i),delay);
         totalRreqSend++;
-        recordRREQStatsCallBack(1.0);
+        // recordRREQStatsCallBack(1.0);
+        recordDataStatsCallBack(RREQ_STAT, 1.0);
+        // HERE
 #else
         aodv_socket_send((AODV_msg *) rreq, dest, RREQ_SIZE, 1, &DEV_NR(i));
 #endif
@@ -264,7 +266,9 @@ void NS_CLASS rreq_forward(RREQ * rreq, int size, int ttl)
         RREQ * rreq_new = check_and_cast <RREQ*>(rreq->dup());
         rreq_new->ttl=ttl;
         aodv_socket_send((AODV_msg *) rreq_new, dest, size, ttl, &DEV_NR(i),delay);
-        recordRREQStatsCallBack(1.0);
+        // recordRREQStatsCallBack(1.0);
+        recordDataStatsCallBack(RREQ_STAT, 1.0);
+        // HERE
 #endif
     }
 }

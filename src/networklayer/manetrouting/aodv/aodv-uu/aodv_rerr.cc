@@ -42,7 +42,6 @@
 
 
 
-#define RERR_STAT 18
 
 
 extern void (*recordDataStatsCallBack) (unsigned char type, double stat);

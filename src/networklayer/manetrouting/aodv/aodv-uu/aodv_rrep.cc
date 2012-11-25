@@ -228,7 +228,9 @@ void NS_CLASS rrep_send(RREP * rrep, rt_table_t * rev_rt,
     rrep->ttl=MAXTTL;
     aodv_socket_send((AODV_msg *) rrep, rev_rt->next_hop, size, 1,
                      &DEV_IFINDEX(rev_rt->ifindex));
-    recordRReplyStatsCallBack(1.0);
+    // recordRReplyStatsCallBack(1.0);
+    recordDataStatsCallBack(RREPLY_STAT, 1.0);
+    // HERE
 
     /* Update precursor lists */
     if (fwd_rt)
@@ -300,7 +302,9 @@ void NS_CLASS rrep_forward(RREP * rrep, int size, rt_table_t * rev_rt,
     rrep_new->ttl=ttl;
     aodv_socket_send((AODV_msg *) rrep_new, rev_rt->next_hop, size, 1,
                      &DEV_IFINDEX(rev_rt->ifindex));
-    recordRReplyStatsCallBack(1.0);
+    // recordRReplyStatsCallBack(1.0);
+    recordDataStatsCallBack(RREPLY_STAT, 1.0);
+    // HERE
 #endif
     precursor_add(fwd_rt, rev_rt->next_hop);
     precursor_add(rev_rt, fwd_rt->next_hop);
