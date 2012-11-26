@@ -24,6 +24,18 @@
 
 #define coreEV (ev.isDisabled()||!coreDebug) ? ev : ev << "ChannelControl: "
 
+
+void (*collectAirFrameCallBack) (cPacket* p);
+
+
+
+void setCollectAirFrameCallBack(void (*_collectAirFrameCallBack) (cPacket* p))
+{
+    collectAirFrameCallBack = _collectAirFrameCallBack;
+}
+
+
+
 Define_Module(ChannelControl);
 
 
@@ -246,6 +258,8 @@ const ChannelControl::TransmissionList& ChannelControl::getOngoingTransmissions(
 void ChannelControl::addOngoingTransmission(RadioRef h, AirFrame *frame)
 {
     Enter_Method_Silent();
+
+    collectAirFrameCallBack(frame);
 
     // we only keep track of ongoing transmissions so that we can support
     // NICs switching channels -- so there's no point doing it if there's only

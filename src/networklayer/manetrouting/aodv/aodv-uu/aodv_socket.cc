@@ -29,6 +29,9 @@
 extern void (*recordRReplyStatsCallBack) (double stat);
 extern void (*recordRREQStatsCallBack) (double stat);
 
+extern void (*recordDataStatsCallBack) (unsigned char type, double stat);
+
+
 
 #ifdef NS_PORT
 #ifndef OMNETPP

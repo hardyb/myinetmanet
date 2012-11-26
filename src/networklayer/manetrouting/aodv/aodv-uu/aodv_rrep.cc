@@ -48,6 +48,7 @@ extern int unidir_hack, optimized_hellos, llfeedback;
 #endif
 
 
+extern void (*recordDataStatsCallBack) (unsigned char type, double stat);
 
 
 void (*recordRReplyStatsCallBack) (double stat);

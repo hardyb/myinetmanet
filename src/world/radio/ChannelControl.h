@@ -31,6 +31,10 @@ class AirFrame;
 #define LIGHT_SPEED 3.0E+8
 #define TRANSMISSION_PURGE_INTERVAL 1.0
 
+
+void setCollectAirFrameCallBack(void (*_collectAirFrameCallBack) (cPacket* p));
+
+
 /**
  * Keeps track of radios/NICs, their positions and channels;
  * also caches neighbor info (which other Radios are within

@@ -40,7 +40,7 @@
 
 
 #include "aodv_msg_struct.h"
-#include "defs_aodv.h"
+#include "aodv_message_types.h"
 
 
 

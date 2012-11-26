@@ -67,6 +67,7 @@ extern int internet_gw_mode;
 #endif
 
 
+extern void (*recordDataStatsCallBack) (unsigned char type, double stat);
 
 
 void (*recordRREQStatsCallBack) (double stat);

@@ -189,11 +189,17 @@ static inline int name2index(char *name)
 #define AODV_PORT 654
 
 /* AODV Message types */
-#define AODV_HELLO    0     /* Really never used as a separate type... */
-#define AODV_RREQ     1
-#define AODV_RREP     2
-#define AODV_RERR     3
-#define AODV_RREP_ACK 4
+//#define AODV_HELLO    0     /* Really never used as a separate type... */
+//#define AODV_RREQ     1
+//#define AODV_RREP     2
+//#define AODV_RERR     3
+//#define AODV_RREP_ACK 4
+
+// moved to a dedicated file so they can be included
+// by other files without issue
+#include "aodv_message_types.h"
+
+
 
 #ifndef OMNETPP
 /* An generic AODV extensions header */
