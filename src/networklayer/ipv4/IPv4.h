@@ -30,8 +30,7 @@
 #endif
 
 
-// needs to go in a single header somewhere
-#define IPV4_DATA_STAT 16
+#include "aodv_zigbee_defs.h"
 
 
 
