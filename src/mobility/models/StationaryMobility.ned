@@ -27,9 +27,11 @@ package inet.mobility.models;
 simple StationaryMobility extends MobilityBase
 {
     parameters:
-        double initialX @unit(m) = default(uniform(this.constraintAreaMinX, this.constraintAreaMaxX));
-        double initialY @unit(m) = default(uniform(this.constraintAreaMinY, this.constraintAreaMaxY));
-        double initialZ @unit(m) = default(uniform(this.constraintAreaMinZ, this.constraintAreaMaxZ));
+        // when using significant number of replicas with increasing number of nodes 
+        // making random placement independant from other randoms may help variance reduction 
+        double initialX @unit(m) = default(uniform(this.constraintAreaMinX, this.constraintAreaMaxX, 1));
+        double initialY @unit(m) = default(uniform(this.constraintAreaMinY, this.constraintAreaMaxY, 1));
+        double initialZ @unit(m) = default(uniform(this.constraintAreaMinZ, this.constraintAreaMaxZ, 1));
         bool initFromDisplayString = default(true);
         @class(StationaryMobility);
 }
