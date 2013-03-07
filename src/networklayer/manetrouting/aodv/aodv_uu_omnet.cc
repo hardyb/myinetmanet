@@ -158,6 +158,9 @@ void NS_CLASS initialize(int stage)
         if ((bool)par("debug"))
             debug = 1;
 
+        rreq_retry_interval_ms = par("rreq_retry_interval_ms");
+        if (!rreq_retry_interval_ms)
+            rreq_retry_interval_ms = NET_TRAVERSAL_TIME;
         useIndex = par("UseIndex");
         unidir_hack = (int) par("unidir_hack");
 

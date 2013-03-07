@@ -864,7 +864,9 @@ void NS_CLASS rreq_route_discovery(struct in_addr dest_addr, u_int8_t flags,
     if (expanding_ring_search)
         timer_set_timeout(&seek_entry->seek_timer, RING_TRAVERSAL_TIME);
     else
-        timer_set_timeout(&seek_entry->seek_timer, NET_TRAVERSAL_TIME);
+        timer_set_timeout(&seek_entry->seek_timer, rreq_retry_interval_ms);
+        //timer_set_timeout(&seek_entry->seek_timer, NET_TRAVERSAL_TIME);
+
 
     DEBUG(LOG_DEBUG, 0, "Seeking %s ttl=%d", ip_to_str(dest_addr), ttl);
 
@@ -931,7 +933,8 @@ void NS_CLASS rreq_local_repair(rt_table_t * rt, struct in_addr src_addr,
         timer_set_timeout(&seek_entry->seek_timer,
                           2 * ttl * NODE_TRAVERSAL_TIME);
     else
-        timer_set_timeout(&seek_entry->seek_timer, NET_TRAVERSAL_TIME);
+        timer_set_timeout(&seek_entry->seek_timer, rreq_retry_interval_ms);
+        //timer_set_timeout(&seek_entry->seek_timer, NET_TRAVERSAL_TIME);
 
     DEBUG(LOG_DEBUG, 0, "Seeking %s ttl=%d", ip_to_str(rt->dest_addr), ttl);
 

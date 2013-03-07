@@ -257,6 +257,7 @@ class AODVUU : public ManetRoutingBase
     int unidir_hack;
     int rreq_gratuitous;
     int expanding_ring_search;
+    int rreq_retry_interval_ms;
     int internet_gw_mode;
     int local_repair;
     int receive_n_hellos;

@@ -60,6 +60,9 @@ simple AODVUU extends BaseRouting like IManetRouting
         double broadcastDelay @unit("s") = default(uniform(0s,0.005s));  // the delay added to broadcast operations if EqualDelay is set (used to model processing time) 
         double unicastDelay @unit("s") = default(0s);  // a delay added to unicast messaged (i.e. data packet forwarding) (used to model processing time)
         
+        // only for non-expanding_ring_search
+        int rreq_retry_interval_ms = default(0); // rreq retry time in ms, if zero then will be NODE_TRAVERSAL_TIME 
+        
         bool UseIndex = default(false);         // use the interface index instead the ip to identify the interface
         bool useHover = default(false);
         int  costStatic = default(1);
